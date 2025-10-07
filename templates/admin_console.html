@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Console - Medical Term Mapper{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h2>Admin Console</h2>
+        <a href="/admin/logout" class="btn btn-secondary">Logout</a>
+    </div>
+
+    {% if request.query_params.get('message') %}
+    <div class="success-message">{{ request.query_params.get('message') }}</div>
+    {% endif %}
+
+    <!-- Statistics -->
+    <div class="card">
+        <h3>Database Statistics</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_terms }}</div>
+                <div class="stat-label">Total Terms</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_mappings }}</div>
+                <div class="stat-label">Total Mappings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_users }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export -->
+    <div class="card">
+        <h3>Export Data</h3>
+        <p>Download all mappings as a CSV file for analysis.</p>
+        <a href="/admin/export" class="btn btn-primary">
+            Download Mappings CSV
+        </a>
+    </div>
+
+    <!-- Reset Operations -->
+    <div class="card danger-zone">
+        <h3>Danger Zone</h3>
+        <p class="warning-text">These operations cannot be undone!</p>
+
+        <div class="admin-action">
+            <div>
+                <h4>Delete All Mappings</h4>
+                <p>Removes all user mappings but keeps terms and users intact.</p>
+            </div>
+            <form method="POST" action="/admin/reset/mappings" onsubmit="return confirm('Are you sure you want to delete ALL mappings? This cannot be undone!');">
+                <button type="submit" class="btn btn-danger">Delete All Mappings</button>
+            </form>
+        </div>
+
+        <div class="admin-action">
+            <div>
+                <h4>Reset Database (Mappings + Terms)</h4>
+                <p>Deletes all mappings and terms, then re-imports terms from CSV.</p>
+            </div>
+            <form method="POST" action="/admin/reset/all" onsubmit="return confirm('Are you sure you want to RESET THE ENTIRE DATABASE? This will delete all mappings and terms and re-import from CSV. This cannot be undone!');">
+                <button type="submit" class="btn btn-danger">Reset Database</button>
+            </form>
+        </div>
+
+        <div class="admin-action">
+            <div>
+                <h4>Delete User Mappings</h4>
+                <p>Remove all mappings for a specific user.</p>
+            </div>
+            <form method="POST" action="/admin/reset/user" onsubmit="return confirm('Are you sure you want to delete all mappings for this user?');">
+                <select name="username" required class="user-select">
+                    <option value="">Select a user</option>
+                    {% for user in users %}
+                    <option value="{{ user }}">{{ user }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-warning">Delete User Mappings</button>
+            </form>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="/" class="btn btn-secondary">Back to Main App</a>
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #c3e6cb;
+}
+
+.danger-zone {
+    border: 2px solid var(--danger-color);
+}
+
+.danger-zone h3 {
+    color: var(--danger-color);
+}
+
+.warning-text {
+    color: var(--danger-color);
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.admin-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: var(--background);
+    border-radius: 8px;
+    margin-bottom: 15px;
+    gap: 20px;
+}
+
+.admin-action h4 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+}
+
+.admin-action p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.admin-action form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.user-select {
+    padding: 10px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    min-width: 200px;
+}
+</style>
+{% endblock %}

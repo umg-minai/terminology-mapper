@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Impressum - Medical Term Mapper{% endblock %}
+
+{% block content %}
+<div class="imprint-container">
+    <div class="card">
+        <h1>Impressum</h1>
+        <p class="subtitle">Angaben gemäß § 5 TMG</p>
+
+        <div class="imprint-section">
+            <h3>Anbieter</h3>
+            <p>
+                <strong>{{ imprint.organization }}</strong><br>
+                {{ imprint.street }}<br>
+                {{ imprint.city }}<br>
+                {{ imprint.country }}
+            </p>
+        </div>
+
+        <div class="imprint-section">
+            <h3>Kontakt</h3>
+            <p>
+                <strong>E-Mail:</strong> <a href="mailto:{{ imprint.email }}">{{ imprint.email }}</a><br>
+                {% if imprint.phone %}
+                <strong>Telefon:</strong> {{ imprint.phone }}<br>
+                {% endif %}
+            </p>
+        </div>
+
+        {% if imprint.representative %}
+        <div class="imprint-section">
+            <h3>Vertretungsberechtigt</h3>
+            <p>{{ imprint.representative }}</p>
+        </div>
+        {% endif %}
+
+        {% if imprint.register %}
+        <div class="imprint-section">
+            <h3>Registereintrag</h3>
+            <p>{{ imprint.register }}</p>
+        </div>
+        {% endif %}
+
+        {% if imprint.vat_id %}
+        <div class="imprint-section">
+            <h3>Umsatzsteuer-ID</h3>
+            <p>{{ imprint.vat_id }}</p>
+        </div>
+        {% endif %}
+
+        <div class="imprint-section">
+            <h3>Haftungsausschluss</h3>
+
+            <h4>Haftung für Inhalte</h4>
+            <p>
+                Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt.
+                Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte
+                können wir jedoch keine Gewähr übernehmen.
+            </p>
+
+            <h4>Haftung für Links</h4>
+            <p>
+                Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren
+                Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden
+                Inhalte auch keine Gewähr übernehmen.
+            </p>
+
+            <h4>Urheberrecht</h4>
+            <p>
+                Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen
+                Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung,
+                Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der
+                Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des
+                jeweiligen Autors bzw. Erstellers.
+            </p>
+        </div>
+
+        <div class="imprint-section">
+            <h3>Datenschutz</h3>
+            <p>
+                Die Nutzung dieser Anwendung erfolgt pseudonymisiert. Es werden keine
+                personenbezogenen Daten gespeichert, die eine Identifikation der
+                Nutzer ermöglichen.
+            </p>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/" class="btn btn-secondary">Zurück zur Startseite</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.imprint-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.imprint-container h1 {
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.imprint-container .subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+    font-size: 14px;
+}
+
+.imprint-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.imprint-section:last-of-type {
+    border-bottom: none;
+}
+
+.imprint-section h3 {
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    font-size: 18px;
+}
+
+.imprint-section h4 {
+    margin-top: 15px;
+    margin-bottom: 10px;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.imprint-section p {
+    line-height: 1.8;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.imprint-section a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.imprint-section a:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

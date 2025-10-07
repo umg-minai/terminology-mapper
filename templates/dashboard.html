@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Medical Term Mapper{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Welcome back, {{ username }}!</h2>
+
+    <!-- Overall Progress -->
+    <div class="card progress-card">
+        <h3>Overall Progress</h3>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: {{ progress.percentage }}%"></div>
+        </div>
+        <p class="progress-text">
+            <strong>{{ progress.completed_terms }}</strong> of <strong>{{ progress.total_terms }}</strong> terms completed ({{ progress.percentage }}%)
+        </p>
+        <p class="help-text">Terms with at least 2 mappings are considered complete</p>
+    </div>
+
+    <!-- User Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total_mappings }}</div>
+            <div class="stat-label">Total Mappings</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.completed_sessions }}</div>
+            <div class="stat-label">Sessions Completed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.streak }}</div>
+            <div class="stat-label">7-Day Streak</div>
+        </div>
+    </div>
+
+    <!-- Start Session -->
+    <div class="card action-card">
+        <h3>Start a New Session</h3>
+        <p>Map medical terms to standardized codes. We'll prioritize terms that need more mappings.</p>
+        <form method="POST" action="{{ url_for('start_session') }}">
+            <div class="form-group">
+                <label for="count">Number of terms per session:</label>
+                <select id="count" name="count">
+                    <option value="10">10 terms (Quick session)</option>
+                    <option value="15" selected>15 terms (Standard)</option>
+                    <option value="20">20 terms (Extended)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-large">Start Mapping Session</button>
+        </form>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="card leaderboard-card">
+        <h3>Leaderboard</h3>
+        <div class="leaderboard">
+            {% for user in leaderboard %}
+            <div class="leaderboard-item {% if user.username == username %}current-user{% endif %}">
+                <span class="rank">{{ loop.index }}</span>
+                <span class="username">{{ user.username }}</span>
+                <span class="score">{{ user.mappings_count }} mappings</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

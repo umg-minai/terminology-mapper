@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Mapping Session - Medical Term Mapper{% endblock %}
+
+{% block content %}
+<div class="session-container">
+    <!-- Progress Header -->
+    <div class="session-header">
+        <h2>Mapping Session</h2>
+        <div class="session-progress">
+            <span class="progress-label">Term {{ current }} of {{ total }}</span>
+            <div class="progress-bar-container">
+                <div class="progress-bar progress-bar-animated" style="width: {{ progress }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Term Card -->
+    <div class="card term-card">
+        <div class="term-display">
+            <div class="term-category">{{ term.category }}</div>
+            <div class="term-text">{{ term.term }}</div>
+        </div>
+
+        <form method="POST" action="/session/submit" id="mappingForm">
+            <!-- Codes List -->
+            <div id="codesContainer">
+                <!-- Initial code entry -->
+                <div class="code-entry" data-index="0">
+                    <div class="code-entry-header">
+                        <label>Code #1</label>
+                    </div>
+                    <div class="code-entry-body">
+                        <div class="form-row">
+                            <div class="form-group flex-grow">
+                                <input type="text" class="code-input" data-code-index="0"
+                                       placeholder="Enter code (e.g., 123456789, I10, LP12345-6)"
+                                       autofocus>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="vocab-selector">
+                                <label class="vocab-label">Vocabulary:</label>
+                                <div class="radio-group">
+                                    <label class="radio-option">
+                                        <input type="radio" name="vocab_0" value="SNOMED" checked>
+                                        <span>SNOMED CT</span>
+                                    </label>
+                                    <label class="radio-option">
+                                        <input type="radio" name="vocab_0" value="ICD10">
+                                        <span>ICD-10</span>
+                                    </label>
+                                    <label class="radio-option">
+                                        <input type="radio" name="vocab_0" value="LOINC">
+                                        <span>LOINC</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <label class="checkbox-option">
+                                <input type="checkbox" class="approximate-match-checkbox" data-approx-index="0">
+                                <span>Approximate match</span>
+                            </label>
+                            <span class="help-text" style="margin-left: 10px;">Check if the code doesn't exactly match what the item says</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Another Code Button -->
+            <button type="button" class="btn btn-secondary btn-add-code" id="addCodeBtn">
+                + Add Another Code
+            </button>
+
+            <!-- Hidden input to store codes JSON -->
+            <input type="hidden" name="codes_json" id="codesJson">
+            <input type="hidden" name="no_code_found" id="noCodeFound" value="false">
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary btn-large" id="submitBtn">
+                    Submit & Continue
+                </button>
+                <button type="button" class="btn btn-warning btn-large" id="noCodeBtn">
+                    No Code Found
+                </button>
+            </div>
+        </form>
+
+        <!-- Additional Info -->
+        <div class="info-banner">
+            <p><strong>Current mappings for this term:</strong> {{ term.mapping_count }}</p>
+            {% if term.mapping_count < 2 %}
+            <p class="highlight">This term needs more mappings!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="session-stats">
+        <div class="stat-mini">
+            <span class="label">Completed:</span>
+            <span class="value">{{ current - 1 }}</span>
+        </div>
+        <div class="stat-mini">
+            <span class="label">Remaining:</span>
+            <span class="value">{{ total - current + 1 }}</span>
+        </div>
+    </div>
+</div>
+
+<script>
+let codeCount = 1;
+
+// Auto-detect vocabulary based on code pattern
+function detectVocabulary(code) {
+    code = code.trim();
+
+    // SNOMED CT: typically 6-18 digits
+    if (/^\d{6,18}$/.test(code)) {
+        return 'SNOMED';
+    }
+
+    // ICD-10: starts with letter, followed by 2 digits, optional dot and more chars
+    // Examples: I10, E11.9, S72.001A
+    if (/^[A-TV-Z]\d{2}(\.\d{1,4}[A-Z]?)?$/i.test(code)) {
+        return 'ICD10';
+    }
+
+    // LOINC: typically LP or just digits followed by dash and digit
+    // Examples: LP12345-6, 1234-5
+    if (/^(LP)?\d{4,6}-\d$/i.test(code)) {
+        return 'LOINC';
+    }
+
+    return null;
+}
+
+// Add event listeners to code inputs for auto-detection
+function setupCodeInput(index) {
+    const input = document.querySelector(`input.code-input[data-code-index="${index}"]`);
+    const radios = document.querySelectorAll(`input[name="vocab_${index}"]`);
+
+    input.addEventListener('input', function() {
+        const detected = detectVocabulary(this.value);
+        if (detected) {
+            radios.forEach(radio => {
+                if (radio.value === detected) {
+                    radio.checked = true;
+                }
+            });
+        }
+    });
+}
+
+// Setup initial input
+setupCodeInput(0);
+
+// Add another code entry
+document.getElementById('addCodeBtn').addEventListener('click', function() {
+    const container = document.getElementById('codesContainer');
+    const newIndex = codeCount;
+
+    const newEntry = document.createElement('div');
+    newEntry.className = 'code-entry';
+    newEntry.dataset.index = newIndex;
+    newEntry.innerHTML = `
+        <div class="code-entry-header">
+            <label>Code #${newIndex + 1}</label>
+            <button type="button" class="btn-remove-code" data-remove-index="${newIndex}">Remove</button>
+        </div>
+        <div class="code-entry-body">
+            <div class="form-row">
+                <div class="form-group flex-grow">
+                    <input type="text" class="code-input" data-code-index="${newIndex}"
+                           placeholder="Enter code">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="vocab-selector">
+                    <label class="vocab-label">Vocabulary:</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="vocab_${newIndex}" value="SNOMED" checked>
+                            <span>SNOMED CT</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="vocab_${newIndex}" value="ICD10">
+                            <span>ICD-10</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="vocab_${newIndex}" value="LOINC">
+                            <span>LOINC</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <label class="checkbox-option">
+                    <input type="checkbox" class="approximate-match-checkbox" data-approx-index="${newIndex}">
+                    <span>Approximate match</span>
+                </label>
+                <span class="help-text" style="margin-left: 10px;">Check if the code doesn't exactly match what the item says</span>
+            </div>
+        </div>
+    `;
+
+    container.appendChild(newEntry);
+    setupCodeInput(newIndex);
+
+    // Setup remove button
+    newEntry.querySelector('.btn-remove-code').addEventListener('click', function() {
+        newEntry.remove();
+    });
+
+    codeCount++;
+
+    // Focus on new input
+    newEntry.querySelector('.code-input').focus();
+});
+
+// Handle "No Code Found" button
+document.getElementById('noCodeBtn').addEventListener('click', function() {
+    document.getElementById('noCodeFound').value = 'true';
+    document.getElementById('codesJson').value = '[]';
+    document.getElementById('mappingForm').submit();
+});
+
+// Handle form submission
+document.getElementById('mappingForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Collect all codes
+    const codes = [];
+    const codeEntries = document.querySelectorAll('.code-entry');
+
+    codeEntries.forEach(entry => {
+        const index = entry.dataset.index;
+        const codeInput = entry.querySelector(`input.code-input[data-code-index="${index}"]`);
+        const vocabRadio = entry.querySelector(`input[name="vocab_${index}"]:checked`);
+        const approxCheckbox = entry.querySelector(`input.approximate-match-checkbox[data-approx-index="${index}"]`);
+
+        const code = codeInput.value.trim();
+        if (code) {
+            codes.push({
+                code: code,
+                vocabulary: vocabRadio ? vocabRadio.value : 'SNOMED',
+                approximate_match: approxCheckbox ? approxCheckbox.checked : false
+            });
+        }
+    });
+
+    // Set the JSON data
+    document.getElementById('codesJson').value = JSON.stringify(codes);
+    document.getElementById('noCodeFound').value = 'false';
+
+    // Submit the form
+    this.submit();
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl+Enter to submit
+    if (e.ctrlKey && e.key === 'Enter') {
+        document.getElementById('submitBtn').click();
+    }
+
+    // Ctrl+N for no code found
+    if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        document.getElementById('noCodeBtn').click();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Session Complete - Medical Term Mapper{% endblock %}
+
+{% block content %}
+<div class="complete-container">
+    <div class="card complete-card">
+        <div class="success-icon">✓</div>
+        <h2>Session Complete!</h2>
+        <p class="success-message">Great job! You've completed this mapping session.</p>
+
+        <div class="session-summary">
+            <div class="summary-item">
+                <div class="summary-number">{{ mappings_count }}</div>
+                <div class="summary-label">Terms Mapped</div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-large">
+                Back to Dashboard
+            </a>
+            <form method="POST" action="{{ url_for('start_session') }}" style="display: inline;">
+                <input type="hidden" name="count" value="15">
+                <button type="submit" class="btn btn-secondary btn-large">
+                    Start Another Session
+                </button>
+            </form>
+        </div>
+
+        <div class="motivation-text">
+            <p>Keep up the great work! Every mapping brings us closer to completing the terminology standardization.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

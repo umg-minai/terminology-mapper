@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Medical Term Mapper{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        {% if request.session.get('username') %}
+        <header>
+            <div class="header-content">
+                <h1>Medical Term Mapper</h1>
+                <div class="user-info">
+                    <span class="username">{{ request.session.get('username') }}</span>
+                    <a href="/logout" class="btn btn-secondary">Logout</a>
+                </div>
+            </div>
+        </header>
+        {% endif %}
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer>
+            <p>Medical Term Mapping System - Gamified Edition</p>
+            <p class="footer-links">
+                <a href="/imprint">Impressum</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
