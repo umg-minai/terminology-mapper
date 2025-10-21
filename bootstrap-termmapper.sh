@@ -10,7 +10,6 @@ SHORT_HOSTNAME="${SHORT_HOSTNAME:-terminology-mapper}"
 EMAIL_TOS="${EMAIL_TOS:-you@example.com}"  # Let’s Encrypt contact email
 ### ========================================
 
-
 APP_HOME="/srv/${SERVICE_USER}"
 APP_DIR="${APP_HOME}/app"
 VENV="${APP_DIR}/.venv"
@@ -24,17 +23,16 @@ info () { printf "\n\033[1;36m[INFO]\033[0m %s\n" "$*"; }
 warn () { printf "\n\033[1;33m[WARN]\033[0m %s\n" "$*"; }
 ok   () { printf "\033[1;32m[OK]\033[0m %s\n" "$*"; }
 pause () { read -r -p "$(printf "\033[1;35m[PAUSE]\033[0m %s " "$*")"; }
-
 require_root () { [[ $EUID -eq 0 ]] || { echo "[ERR] Run as root."; exit 1; }; }
 require_root
 
-### 0) Ask for admin SSH user + pubkey
+### 0) Ask for admin SSH user + pubkey (+ optional SSH port)
 info "Admin SSH account setup"
 read -r -p "Admin username to create (sudo-enabled) [suggestion: appadmin]: " ADMIN_USER
 ADMIN_USER="${ADMIN_USER:-appadmin}"
 echo "Paste the admin user's SSH PUBLIC key (single line starting with ssh-ed25519 or ssh-rsa):"
 read -r ADMIN_PUBKEY
-if [[ -z "${ADMIN_PUBKEY}" ]]; then echo "[ERR] No public key provided."; exit 1; fi
+[[ -n "${ADMIN_PUBKEY}" ]] || { echo "[ERR] No public key provided."; exit 1; }
 read -r -p "SSH port to use [${SSH_PORT}]: " SSH_PORT_INPUT
 SSH_PORT="${SSH_PORT_INPUT:-$SSH_PORT}"
 
@@ -134,7 +132,7 @@ pause "When you've confirmed the new login works, press Enter to apply SSH harde
 
 cp /etc/ssh/sshd_config "/etc/ssh/sshd_config.bak.$(date +%s)"
 
-# Set Port
+# Set Port (idempotent)
 if grep -qE '^#?\s*Port ' /etc/ssh/sshd_config; then
   sed -i -E "s/^#?\s*Port .*/Port ${SSH_PORT}/" /etc/ssh/sshd_config
 else
@@ -148,43 +146,26 @@ sed -i \
   /etc/ssh/sshd_config
 
 sshd -t && systemctl reload ssh
-ok "SSH hardened (root login off, passwords off, port=${SSH_PORT}). Remember to use: ssh -p ${SSH_PORT} ${ADMIN_USER}@${DOMAIN}"
+ok "SSH hardened (root login off, passwords off, port=${SSH_PORT}). Use: ssh -p ${SSH_PORT} ${ADMIN_USER}@${DOMAIN}"
 
-### 10) termmapper service user + SSH for deploy key
+### 10) termmapper service user (no shell)
 info "Creating service user '${SERVICE_USER}'"
 id -u "${SERVICE_USER}" &>/dev/null || \
   useradd --system --create-home --home-dir "${APP_HOME}" --shell /usr/sbin/nologin "${SERVICE_USER}"
-sudo -u "${SERVICE_USER}" mkdir -p "${APP_DIR}" "${APP_HOME}/.ssh"
-chmod 700 "${APP_HOME}/.ssh"
+sudo -u "${SERVICE_USER}" mkdir -p "${APP_DIR}"
+ok "Service user ${SERVICE_USER} ready"
 
-### 11) GitHub deploy key for private repo
-info "Generating GitHub deploy key for '${SERVICE_USER}'"
-sudo -u "${SERVICE_USER}" ssh-keygen -t ed25519 -N "" -C "deploy@${DOMAIN}" -f "${APP_HOME}/.ssh/id_ed25519"
-sudo -u "${SERVICE_USER}" bash -lc 'ssh-keyscan -H github.com >> "$HOME/.ssh/known_hosts"'
-chmod 644 "${APP_HOME}/.ssh/known_hosts"
-
-cat <<EOF
-
-===== COPY THIS PUBLIC DEPLOY KEY INTO GITHUB =====
-Repo → Settings → Deploy keys → Add deploy key → (tick "Allow read access")
----------------------------------------------------------------------------
-$(cat "${APP_HOME}/.ssh/id_ed25519.pub")
----------------------------------------------------------------------------
-EOF
-pause "Press Enter *after* you have added the deploy key…"
-
-if [[ "${REPO_SSH}" == "git@github.com:org/repo.git" ]]; then
-  read -r -p "Enter your private repo SSH URL (e.g., git@github.com:ORG/REPO.git): " REPO_SSH
-  [[ -n "${REPO_SSH}" ]] || { echo "[ERR] No repo URL provided."; exit 1; }
+### 11) Clone PUBLIC repo + venv
+# Prompt if REPO_URL still placeholder
+if [[ "${REPO_URL}" == "https://github.com/org/repo.git" ]]; then
+  read -r -p "Enter your PUBLIC repo URL (e.g., https://github.com/ORG/REPO.git): " REPO_URL
+  [[ -n "${REPO_URL}" ]] || { echo "[ERR] No repo URL provided."; exit 1; }
 fi
-ok "Using repo: ${REPO_SSH}"
-
-### 12) Clone repo + venv
 info "Cloning repo to ${APP_DIR}"
 if [[ -d "${APP_DIR}/.git" ]]; then
   sudo -u "${SERVICE_USER}" git -C "${APP_DIR}" pull --ff-only
 else
-  sudo -u "${SERVICE_USER}" git clone "${REPO_SSH}" "${APP_DIR}"
+  sudo -u "${SERVICE_USER}" git clone "${REPO_URL}" "${APP_DIR}"
 fi
 
 info "Creating Python venv and installing deps"
@@ -197,7 +178,7 @@ sudo -u "${SERVICE_USER}" bash -lc "
   fi
 "
 
-### 13) App env file
+### 12) App env file (stable session secret)
 info "Creating app env at ${ENV_FILE}"
 mkdir -p "${ENV_DIR}"
 if ! grep -q '^SESSION_SECRET=' "${ENV_FILE}" 2>/dev/null; then
@@ -206,7 +187,7 @@ fi
 chown root:"${SERVICE_USER}" "${ENV_FILE}"
 chmod 640 "${ENV_FILE}"
 
-### 14) Nginx HTTP (will be upgraded to HTTPS by certbot)
+### 13) Nginx HTTP (will be upgraded to HTTPS by certbot)
 info "Configuring Nginx for ${DOMAIN}"
 rm -f /etc/nginx/sites-enabled/default || true
 cat >"${SITE_AVAIL}" <<EOF
@@ -247,7 +228,7 @@ EOF
 ln -sf "${SITE_AVAIL}" "${SITE_ENAB}"
 nginx -t && systemctl reload nginx
 
-### 15) Let’s Encrypt TLS
+### 14) Let’s Encrypt TLS
 info "Obtaining TLS certificates via Certbot"
 snap install core && snap refresh core
 snap install --classic certbot
@@ -268,7 +249,7 @@ nginx -t && systemctl reload nginx
 systemctl list-timers | grep certbot || true
 certbot renew --dry-run || true
 
-### 16) Systemd service (gunicorn+uvicorn) on 127.0.0.1:5000, main:app
+### 15) Systemd service (gunicorn+uvicorn) on 127.0.0.1:5000, main:app
 info "Creating systemd unit ${SERVICE_USER}.service"
 cat >"${UNIT_FILE}" <<EOF
 [Unit]
@@ -302,7 +283,7 @@ WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
 
-### 17) Ensure data file exists (pause for manual upload)
+### 16) Ensure data file exists (pause for manual upload)
 info "Preparing data directory and pausing for data upload"
 sudo -u "${SERVICE_USER}" mkdir -p "${APP_DIR}/data"
 echo
@@ -311,20 +292,20 @@ echo "    scp -P ${SSH_PORT} ./data.CSV ${ADMIN_USER}@${DOMAIN}:${APP_DIR}/data/
 echo
 pause "Press Enter after data.CSV is uploaded…"
 if [[ ! -f "${APP_DIR}/data/data.CSV" ]]; then
-  echo "[ERR] ${APP_DIR}/data/data.CSV not found. Upload it and run: systemctl restart ${SERVICE_USER}"
+  echo "[ERR] ${APP_DIR}/data/data.CSV not found. Upload it and then run: systemctl restart ${SERVICE_USER}"
   exit 1
 fi
 chown "${SERVICE_USER}:${SERVICE_USER}" "${APP_DIR}/data/data.CSV"
 chmod 640 "${APP_DIR}/data/data.CSV"
 ok "data.CSV present and permissions set"
 
-### 18) Start app
+### 17) Start app
 info "Starting and enabling ${SERVICE_USER} service"
 systemctl enable --now "${SERVICE_USER}"
 sleep 2
 systemctl status "${SERVICE_USER}" --no-pager || true
 
-### 19) Final checks
+### 18) Final checks
 info "Final HTTP→HTTPS check"
 set +e
 curl -I "http://${DOMAIN}" | sed 's/^/  /'
