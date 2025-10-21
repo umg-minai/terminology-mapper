@@ -100,7 +100,7 @@ def import_terms_from_csv():
         return
 
     # Import terms from CSV
-    with open('data/data.CSV', 'r', encoding='utf-8-sig') as f:
+    with open('data/data.CSV', 'r', encoding='latin-1') as f:
         reader = csv.DictReader(f, delimiter=';')
         for row in reader:
             category = row.get('Kategorie', '').strip()
