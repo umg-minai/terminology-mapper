@@ -33,6 +33,15 @@ ADMIN_USER="${ADMIN_USER:-appadmin}"
 echo "Paste the admin user's SSH PUBLIC key (single line starting with ssh-ed25519 or ssh-rsa):"
 read -r ADMIN_PUBKEY
 [[ -n "${ADMIN_PUBKEY}" ]] || { echo "[ERR] No public key provided."; exit 1; }
+# Ask for an admin password (used for sudo; SSH password login stays disabled)
+while true; do
+  read -r -s -p "Set UNIX password for ${ADMIN_USER} (used for sudo): " ADMIN_PASS1; echo
+  read -r -s -p "Confirm password: " ADMIN_PASS2; echo
+  if [[ -z "$ADMIN_PASS1" ]]; then echo "[ERR] Password cannot be empty."; continue; fi
+  if [[ "$ADMIN_PASS1" != "$ADMIN_PASS2" ]]; then echo "[ERR] Passwords do not match."; continue; fi
+  break
+done
+
 read -r -p "SSH port to use [${SSH_PORT}]: " SSH_PORT_INPUT
 SSH_PORT="${SSH_PORT_INPUT:-$SSH_PORT}"
 
@@ -51,14 +60,18 @@ ok "Hostname: $(hostnamectl --static)"
 ### 3) Create admin user with SSH key + sudo
 info "Creating admin user '${ADMIN_USER}' with sudo + SSH key"
 if ! id -u "${ADMIN_USER}" >/dev/null 2>&1; then
+  # Noninteractive add; we'll set the password immediately afterward
   adduser --disabled-password --gecos "" "${ADMIN_USER}"
 fi
+echo "${ADMIN_USER}:${ADMIN_PASS1}" | chpasswd
+
 usermod -aG sudo "${ADMIN_USER}"
 install -d -m 700 -o "${ADMIN_USER}" -g "${ADMIN_USER}" "/home/${ADMIN_USER}/.ssh"
 printf "%s\n" "${ADMIN_PUBKEY}" > "/home/${ADMIN_USER}/.ssh/authorized_keys"
 chown "${ADMIN_USER}:${ADMIN_USER}" "/home/${ADMIN_USER}/.ssh/authorized_keys"
 chmod 600 "/home/${ADMIN_USER}/.ssh/authorized_keys"
-ok "Admin account ready: ${ADMIN_USER}"
+ok "Admin account ready: ${ADMIN_USER} (sudo requires this password; SSH still key-only)"
+
 
 ### 4) UFW firewall
 info "Configuring UFW firewall"
