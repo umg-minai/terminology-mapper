@@ -305,6 +305,13 @@ EOF
 systemctl daemon-reload
 
 ### 16) Ensure data file exists (pause for manual upload)
+
+# Let the admin user write to the data directory (scoped, not global)
+usermod -aG "${SERVICE_USER}" "${ADMIN_USER}"
+mkdir -p "${APP_DIR}/data"
+chgrp "${SERVICE_USER}" "${APP_DIR}/data"
+chmod 2770 "${APP_DIR}/data"
+
 info "Preparing data directory and pausing for data upload"
 sudo -u "${SERVICE_USER}" mkdir -p "${APP_DIR}/data"
 echo
