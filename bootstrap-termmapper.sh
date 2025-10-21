@@ -4,10 +4,10 @@ set -euo pipefail
 ### ====== CONFIG (you can edit these) ======
 DOMAIN="${DOMAIN:-terminology-mapper.de}"
 SERVICE_USER="${SERVICE_USER:-termmapper}"
-REPO_URL="${REPO_URL:-https://github.com/umg-minai/terminology-mapper.git}" # public repo; will prompt if left as placeholder
+REPO_URL="${REPO_URL:-https://github.com/umg-minai/terminology-mapper.git}" # public repo
 SSH_PORT="${SSH_PORT:-22}"             # change if you use a nonstandard SSH port
 SHORT_HOSTNAME="${SHORT_HOSTNAME:-terminology-mapper}"
-EMAIL_TOS="${EMAIL_TOS:-you@example.com}"  # Let’s Encrypt contact email
+EMAIL_TOS="${EMAIL_TOS:-you@example.com}"  # default; we will prompt interactively
 ### ========================================
 
 APP_HOME="/srv/${SERVICE_USER}"
@@ -26,13 +26,14 @@ pause () { read -r -p "$(printf "\033[1;35m[PAUSE]\033[0m %s " "$*")"; }
 require_root () { [[ $EUID -eq 0 ]] || { echo "[ERR] Run as root."; exit 1; }; }
 require_root
 
-### 0) Ask for admin SSH user + pubkey (+ optional SSH port)
+### 0) Ask for admin SSH user + pubkey (+ optional SSH port) + Certbot email
 info "Admin SSH account setup"
 read -r -p "Admin username to create (sudo-enabled) [suggestion: appadmin]: " ADMIN_USER
 ADMIN_USER="${ADMIN_USER:-appadmin}"
 echo "Paste the admin user's SSH PUBLIC key (single line starting with ssh-ed25519 or ssh-rsa):"
 read -r ADMIN_PUBKEY
 [[ -n "${ADMIN_PUBKEY}" ]] || { echo "[ERR] No public key provided."; exit 1; }
+
 # Ask for an admin password (used for sudo; SSH password login stays disabled)
 while true; do
   read -r -s -p "Set UNIX password for ${ADMIN_USER} (used for sudo): " ADMIN_PASS1; echo
@@ -44,6 +45,14 @@ done
 
 read -r -p "SSH port to use [${SSH_PORT}]: " SSH_PORT_INPUT
 SSH_PORT="${SSH_PORT_INPUT:-$SSH_PORT}"
+
+# Ask for Certbot/Let's Encrypt email
+read -r -p "Email for Let's Encrypt/Certbot expiry notices [${EMAIL_TOS}]: " EMAIL_TOS_INPUT
+EMAIL_TOS="${EMAIL_TOS_INPUT:-$EMAIL_TOS}"
+if [[ "${EMAIL_TOS}" != *"@"* ]]; then
+  echo "[ERR] That doesn't look like an email. Set EMAIL_TOS and rerun."
+  exit 1
+fi
 
 ### 1) Packages
 info "Updating packages and installing base tools"
@@ -60,18 +69,15 @@ ok "Hostname: $(hostnamectl --static)"
 ### 3) Create admin user with SSH key + sudo
 info "Creating admin user '${ADMIN_USER}' with sudo + SSH key"
 if ! id -u "${ADMIN_USER}" >/dev/null 2>&1; then
-  # Noninteractive add; we'll set the password immediately afterward
   adduser --disabled-password --gecos "" "${ADMIN_USER}"
 fi
 echo "${ADMIN_USER}:${ADMIN_PASS1}" | chpasswd
-
 usermod -aG sudo "${ADMIN_USER}"
 install -d -m 700 -o "${ADMIN_USER}" -g "${ADMIN_USER}" "/home/${ADMIN_USER}/.ssh"
 printf "%s\n" "${ADMIN_PUBKEY}" > "/home/${ADMIN_USER}/.ssh/authorized_keys"
 chown "${ADMIN_USER}:${ADMIN_USER}" "/home/${ADMIN_USER}/.ssh/authorized_keys"
 chmod 600 "/home/${ADMIN_USER}/.ssh/authorized_keys"
 ok "Admin account ready: ${ADMIN_USER} (sudo requires this password; SSH still key-only)"
-
 
 ### 4) UFW firewall
 info "Configuring UFW firewall"
@@ -119,20 +125,23 @@ net.ipv6.conf.default.accept_redirects=0
 EOF
 sysctl --system >/dev/null
 
-### 8) Fail2ban
+### 8) Fail2ban (uses your custom SSH port)
 info "Configuring Fail2ban"
-cat >/etc/fail2ban/jail.local <<'EOF'
+cat >/etc/fail2ban/jail.local <<EOF
 [DEFAULT]
 bantime = 1h
 findtime = 10m
 maxretry = 5
 ignoreip = 127.0.0.1/8 ::1
+
 [sshd]
 enabled = true
-port = ssh
+port = ${SSH_PORT}
 logpath = %(sshd_log)s
+
 [nginx-http-auth]
 enabled = true
+
 [nginx-botsearch]
 enabled = true
 EOF
@@ -169,7 +178,6 @@ sudo -u "${SERVICE_USER}" mkdir -p "${APP_DIR}"
 ok "Service user ${SERVICE_USER} ready"
 
 ### 11) Clone PUBLIC repo + venv
-# Prompt if REPO_URL still placeholder
 if [[ "${REPO_URL}" == "https://github.com/org/repo.git" ]]; then
   read -r -p "Enter your PUBLIC repo URL (e.g., https://github.com/ORG/REPO.git): " REPO_URL
   [[ -n "${REPO_URL}" ]] || { echo "[ERR] No repo URL provided."; exit 1; }
@@ -241,7 +249,7 @@ EOF
 ln -sf "${SITE_AVAIL}" "${SITE_ENAB}"
 nginx -t && systemctl reload nginx
 
-### 14) Let’s Encrypt TLS
+### 14) Let’s Encrypt TLS (uses the email you provided)
 info "Obtaining TLS certificates via Certbot"
 snap install core && snap refresh core
 snap install --classic certbot
