@@ -4,7 +4,7 @@ set -euo pipefail
 ### ====== CONFIG (you can edit these) ======
 DOMAIN="${DOMAIN:-terminology-mapper.de}"
 SERVICE_USER="${SERVICE_USER:-termmapper}"
-REPO_SSH="${REPO_SSH:-git@github.com:org/umg-minai/terminology-mapper.git}"
+REPO_URL="${REPO_URL:-https://github.com/umg-minai/terminology-mapper.git}" # public repo; will prompt if left as placeholder
 SSH_PORT="${SSH_PORT:-22}"             # change if you use a nonstandard SSH port
 SHORT_HOSTNAME="${SHORT_HOSTNAME:-terminology-mapper}"
 EMAIL_TOS="${EMAIL_TOS:-you@example.com}"  # Let’s Encrypt contact email
