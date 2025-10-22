@@ -6,6 +6,22 @@
 <div class="dashboard">
     <h2>Welcome back, {{ username }}!</h2>
 
+    <!-- User Progress -->
+    <div class="card progress-card">
+        <h3>Your Progress</h3>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: {{ user_progress.percentage }}%;"></div>
+        </div>
+        <p class="progress-text">
+            <strong>{{ user_progress.mapped_terms }}</strong> of <strong>{{ user_progress.total_terms }}</strong> terms mapped by you ({{ user_progress.percentage }}%)
+        </p>
+        {% if user_progress.remaining_terms == 0 %}
+        <p class="help-text" style="color: #10b981; font-weight: bold;">🎉 Congratulations! You've mapped all available terms!</p>
+        {% else %}
+        <p class="help-text">{{ user_progress.remaining_terms }} terms remaining for you to map</p>
+        {% endif %}
+    </div>
+
     <!-- Overall Progress -->
     <div class="card progress-card">
         <h3>Overall Progress</h3>
@@ -16,22 +32,6 @@
             <strong>{{ progress.completed_terms }}</strong> of <strong>{{ progress.total_terms }}</strong> terms completed ({{ progress.percentage }}%)
         </p>
         <p class="help-text">Terms with at least 2 mappings are considered complete</p>
-    </div>
-
-    <!-- User Progress -->
-    <div class="card progress-card">
-        <h3>Your Progress</h3>
-        <div class="progress-bar-container">
-            <div class="progress-bar" style="width: {{ user_progress.percentage }}%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
-        </div>
-        <p class="progress-text">
-            <strong>{{ user_progress.mapped_terms }}</strong> of <strong>{{ user_progress.total_terms }}</strong> terms mapped by you ({{ user_progress.percentage }}%)
-        </p>
-        {% if user_progress.remaining_terms == 0 %}
-        <p class="help-text" style="color: #10b981; font-weight: bold;">🎉 Congratulations! You've mapped all available terms!</p>
-        {% else %}
-        <p class="help-text">{{ user_progress.remaining_terms }} terms remaining for you to map</p>
-        {% endif %}
     </div>
 
     <!-- User Stats -->
