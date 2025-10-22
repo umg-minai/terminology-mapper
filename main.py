@@ -699,7 +699,7 @@ async def export_mappings(request: Request):
     c = conn.cursor()
 
     c.execute('''
-        SELECT u.username, t.category, t.term, m.codes, m.no_code_found, m.created_at
+        SELECT u.username, t.category, t.term, m.codes, m.no_code_found, m.comment, m.created_at
         FROM mappings m
         JOIN users u ON m.user_id = u.id
         JOIN terms t ON m.term_id = t.id
@@ -712,7 +712,7 @@ async def export_mappings(request: Request):
     # Create CSV in memory
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['Username', 'Category', 'Term', 'Codes', 'No Code Found', 'Created At'])
+    writer.writerow(['Username', 'Category', 'Term', 'Codes', 'No Code Found', 'Comment', 'Created At'])
 
     for row in rows:
         writer.writerow(row)
