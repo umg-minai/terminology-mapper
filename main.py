@@ -146,12 +146,22 @@ Diese E-Mail wurde über das Kontaktformular auf {DATENSCHUTZ_CONFIG.get('websit
         msg.attach(part1)
         msg.attach(part2)
         
-        # Send email
-        with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
-            if EMAIL_CONFIG.get('use_tls', True):
-                server.starttls()
-            server.login(EMAIL_CONFIG['username'], EMAIL_CONFIG['password'])
-            server.send_message(msg)
+        # Send email using TLS or SSL
+        use_tls = EMAIL_CONFIG.get('use_tls', True)
+        use_ssl = EMAIL_CONFIG.get('use_ssl', False)
+        
+        if use_ssl:
+            # Use SSL (port 465 typically)
+            with smtplib.SMTP_SSL(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
+                server.login(EMAIL_CONFIG['username'], EMAIL_CONFIG['password'])
+                server.send_message(msg)
+        else:
+            # Use TLS (port 587 typically) or plain SMTP
+            with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
+                if use_tls:
+                    server.starttls()
+                server.login(EMAIL_CONFIG['username'], EMAIL_CONFIG['password'])
+                server.send_message(msg)
         
         return True
     except Exception as e:

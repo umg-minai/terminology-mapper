@@ -76,7 +76,8 @@ contact:
 email:
   smtp_server: smtp.example.com  # e.g., smtp.gmail.com, smtp.ionos.de
   smtp_port: 587  # Usually 587 for TLS, 465 for SSL
-  use_tls: true
+  use_tls: true   # Use STARTTLS (for port 587)
+  use_ssl: false  # Use SSL/TLS (for port 465) - use one or the other, not both
   username: your-email@example.com
   password: your-password
   from_email: noreply@example.com

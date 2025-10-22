@@ -306,6 +306,7 @@ email:
   smtp_server: smtp.example.com
   smtp_port: 587
   use_tls: true
+  use_ssl: false
   username: your-email@example.com
   password: your-password
   from_email: noreply@example.com
@@ -318,11 +319,14 @@ email:
 |-------|----------|-------------|---------|
 | `smtp_server` | Yes | SMTP server hostname | `"smtp.gmail.com"` |
 | `smtp_port` | Yes | SMTP port (587 for TLS, 465 for SSL) | `587` |
-| `use_tls` | Yes | Use TLS encryption | `True` |
+| `use_tls` | No | Use STARTTLS encryption (for port 587) | `true` |
+| `use_ssl` | No | Use SSL/TLS encryption (for port 465) | `false` |
 | `username` | Yes | SMTP account username | `"user@example.com"` |
 | `password` | Yes | SMTP account password | `"your-password"` |
 | `from_email` | Yes | Sender email address | `"noreply@example.com"` |
 | `from_name` | Yes | Sender display name | `"My Application"` |
+
+**Note:** Use either `use_tls: true` (port 587) OR `use_ssl: true` (port 465), not both.
 
 ### Common SMTP Providers
 
@@ -332,6 +336,7 @@ email:
   smtp_server: smtp.gmail.com
   smtp_port: 587
   use_tls: true
+  use_ssl: false
   username: your-gmail@gmail.com
   password: your-app-password  # Use App Password
   from_email: your-gmail@gmail.com
@@ -339,12 +344,26 @@ email:
 ```
 Note: Use App Password, not your regular Gmail password.
 
-**IONOS:**
+**IONOS (with TLS on port 587):**
 ```yaml
 email:
   smtp_server: smtp.ionos.de
   smtp_port: 587
   use_tls: true
+  use_ssl: false
+  username: your-email@yourdomain.com
+  password: your-password
+  from_email: noreply@yourdomain.com
+  from_name: Terminology Mapper
+```
+
+**IONOS (with SSL on port 465):**
+```yaml
+email:
+  smtp_server: smtp.ionos.de
+  smtp_port: 465
+  use_tls: false
+  use_ssl: true
   username: your-email@yourdomain.com
   password: your-password
   from_email: noreply@yourdomain.com
@@ -357,6 +376,7 @@ email:
   smtp_server: smtp.office365.com
   smtp_port: 587
   use_tls: true
+  use_ssl: false
   username: your-email@outlook.com
   password: your-password
   from_email: your-email@outlook.com
@@ -486,6 +506,7 @@ email:
   smtp_server: smtp.ionos.de
   smtp_port: 587
   use_tls: true
+  use_ssl: false
   username: contact@research.example
   password: your-smtp-password
   from_email: noreply@research.example
