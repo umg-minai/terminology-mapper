@@ -82,3 +82,4 @@ email:
   password: your-password
   from_email: noreply@example.com
   from_name: Terminology Mapper
+  # envelope_from: your-email@example.com  # Optional: SMTP envelope sender (defaults to from_email)

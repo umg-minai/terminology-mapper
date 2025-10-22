@@ -311,6 +311,7 @@ email:
   password: your-password
   from_email: noreply@example.com
   from_name: Terminology Mapper
+  envelope_from: your-email@example.com  # Optional
 ```
 
 ### Email Configuration Fields
@@ -323,10 +324,13 @@ email:
 | `use_ssl` | No | Use SSL/TLS encryption (for port 465) | `false` |
 | `username` | Yes | SMTP account username | `"user@example.com"` |
 | `password` | Yes | SMTP account password | `"your-password"` |
-| `from_email` | Yes | Sender email address | `"noreply@example.com"` |
+| `from_email` | Yes | Sender email address (appears in From header) | `"noreply@example.com"` |
 | `from_name` | Yes | Sender display name | `"My Application"` |
+| `envelope_from` | No | SMTP envelope sender (defaults to `from_email`) | `"user@example.com"` |
 
 **Note:** Use either `use_tls: true` (port 587) OR `use_ssl: true` (port 465), not both.
+
+**Envelope From:** Some email providers require the envelope sender to match your authenticated account. If emails fail to send, try setting `envelope_from` to match your `username`.
 
 ### Common SMTP Providers
 

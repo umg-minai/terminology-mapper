@@ -17,6 +17,8 @@ from email.mime.multipart import MIMEMultipart
 import os
 import sys
 import yaml
+import ssl
+import traceback
 
 # Load configuration from YAML file
 CONFIG_FILE = 'config.yaml'
@@ -149,23 +151,45 @@ Diese E-Mail wurde über das Kontaktformular auf {DATENSCHUTZ_CONFIG.get('websit
         # Send email using TLS or SSL
         use_tls = EMAIL_CONFIG.get('use_tls', True)
         use_ssl = EMAIL_CONFIG.get('use_ssl', False)
+        smtp_server = EMAIL_CONFIG['smtp_server']
+        smtp_port = EMAIL_CONFIG['smtp_port']
+        username = EMAIL_CONFIG['username']
+        password = EMAIL_CONFIG['password']
         
-        if use_ssl:
+        # Create SSL context
+        context = ssl.create_default_context()
+        
+        # Determine envelope sender (can be different from From header)
+        envelope_from = EMAIL_CONFIG.get('envelope_from', EMAIL_CONFIG['from_email'])
+        recipients = [CONTACT_CONFIG['email']]
+        
+        if use_ssl or smtp_port == 465:
             # Use SSL (port 465 typically)
-            with smtplib.SMTP_SSL(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
-                server.login(EMAIL_CONFIG['username'], EMAIL_CONFIG['password'])
-                server.send_message(msg)
+            with smtplib.SMTP_SSL(smtp_server, smtp_port, context=context, timeout=30) as server:
+                server.login(username, password)
+                refused = server.sendmail(envelope_from, recipients, msg.as_string())
+                if refused:
+                    print(f"Refused recipients: {refused}", file=sys.stderr)
         else:
-            # Use TLS (port 587 typically) or plain SMTP
-            with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
+            # Use STARTTLS (port 587 typically) or plain SMTP
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=30) as server:
+                server.ehlo()
                 if use_tls:
-                    server.starttls()
-                server.login(EMAIL_CONFIG['username'], EMAIL_CONFIG['password'])
-                server.send_message(msg)
+                    server.starttls(context=context)
+                    server.ehlo()
+                server.login(username, password)
+                refused = server.sendmail(envelope_from, recipients, msg.as_string())
+                if refused:
+                    print(f"Refused recipients: {refused}", file=sys.stderr)
         
         return True
+    except smtplib.SMTPResponseException as e:
+        print(f"SMTP error {e.smtp_code}: {e.smtp_error!r}", file=sys.stderr)
+        traceback.print_exc()
+        return False
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"Error sending email: {e}", file=sys.stderr)
+        traceback.print_exc()
         return False
 
 def init_db():
