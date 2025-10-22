@@ -221,6 +221,7 @@ def init_db():
         user_id INTEGER NOT NULL,
         codes TEXT NOT NULL,
         no_code_found BOOLEAN DEFAULT 0,
+        comment TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (term_id) REFERENCES terms(id),
         FOREIGN KEY (user_id) REFERENCES users(id),
@@ -387,6 +388,30 @@ def get_overall_progress():
         'percentage': round((completed_terms / total_terms * 100) if total_terms > 0 else 0, 1)
     }
 
+def get_user_progress(user_id):
+    """Get user-specific progress statistics"""
+    conn = get_db()
+    c = conn.cursor()
+
+    # Total terms
+    c.execute('SELECT COUNT(*) FROM terms')
+    total_terms = c.fetchone()[0]
+
+    # Terms this user has mapped
+    c.execute('SELECT COUNT(DISTINCT term_id) FROM mappings WHERE user_id = ?', (user_id,))
+    user_mapped_terms = c.fetchone()[0]
+
+    # Terms remaining for this user
+    remaining_terms = total_terms - user_mapped_terms
+
+    conn.close()
+    return {
+        'total_terms': total_terms,
+        'mapped_terms': user_mapped_terms,
+        'remaining_terms': remaining_terms,
+        'percentage': round((user_mapped_terms / total_terms * 100) if total_terms > 0 else 0, 1)
+    }
+
 def get_leaderboard(limit=10):
     """Get top users by total mappings"""
     conn = get_db()
@@ -471,6 +496,7 @@ async def dashboard(request: Request):
 
     user_stats = get_user_stats(user['user_id'])
     overall_progress = get_overall_progress()
+    user_progress = get_user_progress(user['user_id'])
     leaderboard = get_leaderboard()
 
     return templates.TemplateResponse("dashboard.html", {
@@ -478,6 +504,7 @@ async def dashboard(request: Request):
         "username": user['username'],
         "stats": user_stats,
         "progress": overall_progress,
+        "user_progress": user_progress,
         "leaderboard": leaderboard
     })
 
@@ -534,7 +561,8 @@ async def mapping_session(request: Request):
 async def submit_mapping(
     request: Request,
     codes_json: str = Form("[]"),
-    no_code_found: bool = Form(False)
+    no_code_found: bool = Form(False),
+    comment: str = Form("")
 ):
     """Submit a mapping for current term"""
     user = get_current_user(request)
@@ -553,8 +581,8 @@ async def submit_mapping(
     conn = get_db()
     c = conn.cursor()
     try:
-        c.execute('INSERT INTO mappings (term_id, user_id, codes, no_code_found) VALUES (?, ?, ?, ?)',
-                  (term_id, user['user_id'], codes_json, no_code_found))
+        c.execute('INSERT INTO mappings (term_id, user_id, codes, no_code_found, comment) VALUES (?, ?, ?, ?, ?)',
+                  (term_id, user['user_id'], codes_json, no_code_found, comment.strip() if comment else None))
         conn.commit()
     except sqlite3.IntegrityError:
         # User already rated this term - skip it

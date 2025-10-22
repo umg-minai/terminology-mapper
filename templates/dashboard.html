@@ -18,6 +18,22 @@
         <p class="help-text">Terms with at least 2 mappings are considered complete</p>
     </div>
 
+    <!-- User Progress -->
+    <div class="card progress-card">
+        <h3>Your Progress</h3>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: {{ user_progress.percentage }}%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+        </div>
+        <p class="progress-text">
+            <strong>{{ user_progress.mapped_terms }}</strong> of <strong>{{ user_progress.total_terms }}</strong> terms mapped by you ({{ user_progress.percentage }}%)
+        </p>
+        {% if user_progress.remaining_terms == 0 %}
+        <p class="help-text" style="color: #10b981; font-weight: bold;">🎉 Congratulations! You've mapped all available terms!</p>
+        {% else %}
+        <p class="help-text">{{ user_progress.remaining_terms }} terms remaining for you to map</p>
+        {% endif %}
+    </div>
+
     <!-- User Stats -->
     <div class="stats-grid">
         <div class="stat-card">
@@ -37,6 +53,10 @@
     <!-- Start Session -->
     <div class="card action-card">
         <h3>Start a New Session</h3>
+        {% if user_progress.remaining_terms == 0 %}
+        <p style="color: #10b981; font-weight: bold;">🎉 You've completed all available terms! Great work!</p>
+        <p>Check back later when new terms are added or wait for other users to contribute more mappings.</p>
+        {% else %}
         <p>Map medical terms to standardized codes. We'll prioritize terms that need more mappings.</p>
         <form method="POST" action="{{ url_for('start_session') }}">
             <div class="form-group">
@@ -49,6 +69,7 @@
             </div>
             <button type="submit" class="btn btn-primary btn-large">Start Mapping Session</button>
         </form>
+        {% endif %}
     </div>
 
     <!-- Leaderboard -->
