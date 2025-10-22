@@ -8,6 +8,30 @@
         <h1>Impressum</h1>
         <p class="subtitle">Angaben gemäß § 5 TMG</p>
 
+        {% if imprint.type == 'private' %}
+        {# Private person imprint #}
+        <div class="imprint-section">
+            <h3>Verantwortlich gemäß § 5 TMG</h3>
+            <p>
+                <strong>{{ imprint.private_name or imprint.organization }}</strong><br>
+                {{ imprint.private_street or imprint.street }}<br>
+                {{ imprint.private_city or imprint.city }}<br>
+                {{ imprint.private_country or imprint.country }}
+            </p>
+        </div>
+
+        <div class="imprint-section">
+            <h3>Kontakt</h3>
+            <p>
+                <strong>E-Mail:</strong> <a href="mailto:{{ imprint.private_email or imprint.email }}">{{ imprint.private_email or imprint.email }}</a><br>
+                {% if imprint.private_phone or imprint.phone %}
+                <strong>Telefon:</strong> {{ imprint.private_phone or imprint.phone }}<br>
+                {% endif %}
+            </p>
+        </div>
+        
+        {% else %}
+        {# Organization imprint #}
         <div class="imprint-section">
             <h3>Anbieter</h3>
             <p>
@@ -48,6 +72,7 @@
             <p>{{ imprint.vat_id }}</p>
         </div>
         {% endif %}
+        {% endif %}
 
         <div class="imprint-section">
             <h3>Haftungsausschluss</h3>
@@ -82,6 +107,19 @@
                 Die Nutzung dieser Anwendung erfolgt pseudonymisiert. Es werden keine
                 personenbezogenen Daten gespeichert, die eine Identifikation der
                 Nutzer ermöglichen.
+            </p>
+            <p>
+                Weitere Informationen finden Sie in unserer 
+                <a href="/datenschutz">Datenschutzerklärung</a>.
+            </p>
+        </div>
+
+        <div class="contact-info-box">
+            <h3>Kontakt</h3>
+            <p>
+                Sie können uns über unser <a href="/contact">Kontaktformular</a> erreichen 
+                oder direkt per E-Mail an: 
+                <a href="mailto:{{ imprint.email }}">{{ imprint.email }}</a>
             </p>
         </div>
 
@@ -144,6 +182,36 @@
 }
 
 .imprint-section a:hover {
+    text-decoration: underline;
+}
+
+.contact-info-box {
+    margin-top: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%);
+    border: 2px solid var(--primary-color);
+    border-radius: 12px;
+}
+
+.contact-info-box h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    font-size: 18px;
+}
+
+.contact-info-box p {
+    margin: 0;
+    line-height: 1.8;
+}
+
+.contact-info-box a {
+    color: var(--primary-color);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.contact-info-box a:hover {
     text-decoration: underline;
 }
 </style>

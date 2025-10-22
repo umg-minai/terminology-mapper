@@ -1,0 +1,83 @@
+# Database Configuration
+database:
+  path: database.db
+
+# Authentication Passwords
+passwords:
+  global_password: mapping2024  # Password for all users
+  admin_password: admin2024     # Password for admin console
+
+# CSV Data Import Settings
+data_import:
+  csv_path: data/data.CSV
+  encoding: latin-1
+  delimiter: ";"
+
+# Imprint Configuration (Impressum - required for German law compliance)
+imprint:
+  enabled: true
+  type: organization  # 'organization' or 'private'
+  
+  # For organizations:
+  organization: Your Organization Name
+  street: Street Address
+  city: City, Postal Code
+  country: Germany
+  email: contact@example.com
+  phone: "+49 123 456789"
+  representative: Name of Representative
+  register: Register Court and Number (if applicable)
+  vat_id: VAT ID (if applicable)
+  
+  # For private persons (when type='private'):
+  private_name: Your Full Name
+
+# Data Protection Configuration (Datenschutzerklärung)
+datenschutz:
+  enabled: true
+  type: organization  # 'organization' or 'private'
+  
+  # For organizations:
+  organization: Your Organization Name
+  street: Street Address
+  city: City, Postal Code
+  phone: "+49 123 456789"
+  fax: "+49 123 456788"
+  email: contact@example.com
+  website: www.example.com
+  representatives:
+    - Prof. Dr. Name (Position)
+    - Dr. Name (Position)
+  register_court: Amtsgericht City
+  register_number: VR 12345
+  
+  # For private persons (when type='private'):
+  private_name: Your Full Name
+  
+  # Common fields:
+  contact_email: privacy@example.com
+  hosting_provider: Hosting Provider Name
+  last_updated: Month Year
+
+# Contact Form Configuration
+contact:
+  enabled: true
+  email: contact@example.com
+  store_in_db: true
+  send_email: false  # Set to true to send emails via SMTP
+  subjects:
+    - Allgemeine Anfrage
+    - Technischer Support
+    - Feedback zur Studie
+    - Datenschutzanfrage
+    - Sonstiges
+
+# Email Server Configuration (SMTP)
+email:
+  smtp_server: smtp.example.com  # e.g., smtp.gmail.com, smtp.ionos.de
+  smtp_port: 587  # Usually 587 for TLS, 465 for SSL
+  use_tls: true
+  username: your-email@example.com
+  password: your-password
+  from_email: noreply@example.com
+  from_name: Terminology Mapper

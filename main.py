@@ -10,35 +10,144 @@ from datetime import datetime
 from typing import Optional, List
 import json
 import io
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
+import sys
+import yaml
+
+# Load configuration from YAML file
+CONFIG_FILE = 'config.yaml'
+
+def load_config():
+    """Load configuration from YAML file"""
+    if not os.path.exists(CONFIG_FILE):
+        print(f"ERROR: Configuration file '{CONFIG_FILE}' not found!")
+        print(f"Please copy 'config.example.yaml' to '{CONFIG_FILE}' and customize it.")
+        sys.exit(1)
+    
+    try:
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f)
+    except yaml.YAMLError as e:
+        print(f"ERROR: Invalid YAML in configuration file: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"ERROR: Failed to load configuration: {e}")
+        sys.exit(1)
+
+# Load configuration
+config = load_config()
+
+# Extract configuration sections
+DATABASE = config['database']['path']
+GLOBAL_PASSWORD = config['passwords']['global_password']
+ADMIN_PASSWORD = config['passwords']['admin_password']
+DATA_IMPORT_CONFIG = config['data_import']
+IMPRINT_CONFIG = config['imprint']
+DATENSCHUTZ_CONFIG = config['datenschutz']
+CONTACT_CONFIG = config['contact']
+EMAIL_CONFIG = config['email']
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=secrets.token_hex(32))
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-DATABASE = 'database.db'
-GLOBAL_PASSWORD = 'mapping2024'  # Change this to your desired password
-ADMIN_PASSWORD = 'admin2024'  # Admin console password
-
-# Imprint Configuration (required for German law compliance - Impressumspflicht)
-IMPRINT_CONFIG = {
-    'enabled': True,  # Set to False to hide imprint
-    'organization': 'Your Organization Name',
-    'street': 'Street Address',
-    'city': 'City, Postal Code',
-    'country': 'Germany',
-    'email': 'contact@example.com',
-    'phone': '+49 123 456789',
-    'representative': 'Name of Representative',
-    'register': 'Register Court and Number (if applicable)',
-    'vat_id': 'VAT ID (if applicable)',
-}
-
 def get_db():
     """Get database connection"""
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
+
+def send_contact_email(name: str, email: str, subject: str, message: str):
+    """Send contact form email"""
+    if not CONTACT_CONFIG.get('send_email', False):
+        return False
+    
+    try:
+        # Create message
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = f"[Kontaktformular] {subject}"
+        msg['From'] = f"{EMAIL_CONFIG['from_name']} <{EMAIL_CONFIG['from_email']}>"
+        msg['To'] = CONTACT_CONFIG['email']
+        msg['Reply-To'] = email
+        
+        # Create email body
+        text_body = f"""
+Neue Nachricht über das Kontaktformular
+
+Von: {name}
+E-Mail: {email}
+Betreff: {subject}
+
+Nachricht:
+{message}
+
+---
+Diese E-Mail wurde über das Kontaktformular auf {DATENSCHUTZ_CONFIG.get('website', 'terminology-mapper.de')} gesendet.
+"""
+        
+        html_body = f"""
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: #4f46e5; color: white; padding: 20px; border-radius: 8px 8px 0 0; }}
+        .content {{ background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; }}
+        .field {{ margin-bottom: 15px; }}
+        .label {{ font-weight: bold; color: #64748b; }}
+        .message-box {{ background: white; padding: 15px; border-left: 4px solid #4f46e5; margin-top: 10px; }}
+        .footer {{ text-align: center; color: #64748b; font-size: 12px; margin-top: 20px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2 style="margin: 0;">Neue Kontaktanfrage</h2>
+        </div>
+        <div class="content">
+            <div class="field">
+                <span class="label">Von:</span> {name}
+            </div>
+            <div class="field">
+                <span class="label">E-Mail:</span> <a href="mailto:{email}">{email}</a>
+            </div>
+            <div class="field">
+                <span class="label">Betreff:</span> {subject}
+            </div>
+            <div class="field">
+                <span class="label">Nachricht:</span>
+                <div class="message-box">{message.replace(chr(10), '<br>')}</div>
+            </div>
+        </div>
+        <div class="footer">
+            Diese E-Mail wurde über das Kontaktformular auf {DATENSCHUTZ_CONFIG.get('website', 'terminology-mapper.de')} gesendet.
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        # Attach both plain text and HTML versions
+        part1 = MIMEText(text_body, 'plain')
+        part2 = MIMEText(html_body, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        # Send email
+        with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
+            if EMAIL_CONFIG.get('use_tls', True):
+                server.starttls()
+            server.login(EMAIL_CONFIG['username'], EMAIL_CONFIG['password'])
+            server.send_message(msg)
+        
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
 
 def init_db():
     """Initialize database with schema"""
@@ -85,6 +194,17 @@ def init_db():
         FOREIGN KEY (user_id) REFERENCES users(id)
     )''')
 
+    # Contact messages table
+    c.execute('''CREATE TABLE IF NOT EXISTS contact_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        read BOOLEAN DEFAULT 0
+    )''')
+
     conn.commit()
     conn.close()
 
@@ -99,20 +219,31 @@ def import_terms_from_csv():
         conn.close()
         return
 
-    # Import terms from CSV
-    with open('data/data.CSV', 'r', encoding='latin-1') as f:
-        reader = csv.DictReader(f, delimiter=';')
-        for row in reader:
-            category = row.get('Kategorie', '').strip()
-            term = row.get('Item', '').strip()
-            if category and term:
-                try:
-                    c.execute('INSERT INTO terms (category, term) VALUES (?, ?)', (category, term))
-                except sqlite3.IntegrityError:
-                    pass  # Skip duplicates
-
-    conn.commit()
-    conn.close()
+    # Import terms from CSV using configuration
+    csv_path = DATA_IMPORT_CONFIG['csv_path']
+    encoding = DATA_IMPORT_CONFIG['encoding']
+    delimiter = DATA_IMPORT_CONFIG['delimiter']
+    
+    try:
+        with open(csv_path, 'r', encoding=encoding) as f:
+            reader = csv.DictReader(f, delimiter=delimiter)
+            for row in reader:
+                category = row.get('Kategorie', '').strip()
+                term = row.get('Item', '').strip()
+                if category and term:
+                    try:
+                        c.execute('INSERT INTO terms (category, term) VALUES (?, ?)', (category, term))
+                    except sqlite3.IntegrityError:
+                        pass  # Skip duplicates
+        
+        conn.commit()
+        print(f"Successfully imported terms from {csv_path}")
+    except FileNotFoundError:
+        print(f"WARNING: CSV file not found at {csv_path}")
+    except Exception as e:
+        print(f"ERROR importing terms: {e}")
+    finally:
+        conn.close()
 
 def get_current_user(request: Request):
     """Get current user from session"""
@@ -466,6 +597,12 @@ async def admin_console(request: Request):
     c.execute('SELECT COUNT(*) FROM users')
     total_users = c.fetchone()[0]
 
+    c.execute('SELECT COUNT(*) FROM contact_messages')
+    total_messages = c.fetchone()[0]
+
+    c.execute('SELECT COUNT(*) FROM contact_messages WHERE read = 0')
+    unread_messages = c.fetchone()[0]
+
     c.execute('SELECT username FROM users ORDER BY username')
     users = [row[0] for row in c.fetchall()]
 
@@ -476,6 +613,8 @@ async def admin_console(request: Request):
         "total_terms": total_terms,
         "total_mappings": total_mappings,
         "total_users": total_users,
+        "total_messages": total_messages,
+        "unread_messages": unread_messages,
         "users": users
     })
 
@@ -577,6 +716,55 @@ async def admin_logout(request: Request):
     request.session.pop('admin_logged_in', None)
     return RedirectResponse(url="/admin", status_code=302)
 
+@app.get("/admin/messages", response_class=HTMLResponse)
+async def admin_messages(request: Request):
+    """View contact messages"""
+    if not request.session.get('admin_logged_in'):
+        return RedirectResponse(url="/admin", status_code=302)
+
+    conn = get_db()
+    c = conn.cursor()
+
+    c.execute('''SELECT id, name, email, subject, message, created_at, read 
+                 FROM contact_messages 
+                 ORDER BY created_at DESC''')
+    messages = [dict(row) for row in c.fetchall()]
+
+    conn.close()
+
+    return templates.TemplateResponse("admin_messages.html", {
+        "request": request,
+        "messages": messages
+    })
+
+@app.post("/admin/messages/{message_id}/mark-read")
+async def mark_message_read(request: Request, message_id: int):
+    """Mark a contact message as read"""
+    if not request.session.get('admin_logged_in'):
+        return RedirectResponse(url="/admin", status_code=302)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('UPDATE contact_messages SET read = 1 WHERE id = ?', (message_id,))
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(url="/admin/messages", status_code=302)
+
+@app.post("/admin/messages/{message_id}/delete")
+async def delete_message(request: Request, message_id: int):
+    """Delete a contact message"""
+    if not request.session.get('admin_logged_in'):
+        return RedirectResponse(url="/admin", status_code=302)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('DELETE FROM contact_messages WHERE id = ?', (message_id,))
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(url="/admin/messages", status_code=302)
+
 # Imprint Route
 @app.get("/imprint", response_class=HTMLResponse)
 async def imprint(request: Request):
@@ -588,6 +776,68 @@ async def imprint(request: Request):
         "request": request,
         "imprint": IMPRINT_CONFIG
     })
+
+# Data Protection Route
+@app.get("/datenschutz", response_class=HTMLResponse)
+async def datenschutz(request: Request):
+    """Display data protection page (Datenschutzerklärung)"""
+    if not DATENSCHUTZ_CONFIG.get('enabled', True):
+        raise HTTPException(status_code=404, detail="Data protection page not available")
+
+    return templates.TemplateResponse("datenschutz.html", {
+        "request": request,
+        "datenschutz": DATENSCHUTZ_CONFIG
+    })
+
+# Contact Form Routes
+@app.get("/contact", response_class=HTMLResponse)
+async def contact_form(request: Request, success: bool = False):
+    """Display contact form"""
+    if not CONTACT_CONFIG.get('enabled', True):
+        raise HTTPException(status_code=404, detail="Contact form not available")
+
+    return templates.TemplateResponse("contact.html", {
+        "request": request,
+        "contact": CONTACT_CONFIG,
+        "success": success
+    })
+
+@app.post("/contact/submit")
+async def submit_contact(request: Request, 
+                        name: str = Form(...),
+                        email: str = Form(...),
+                        subject: str = Form(...),
+                        message: str = Form(...)):
+    """Submit contact form"""
+    if not CONTACT_CONFIG.get('enabled', True):
+        raise HTTPException(status_code=404, detail="Contact form not available")
+
+    # Basic validation
+    if not name.strip() or not email.strip() or not message.strip():
+        return templates.TemplateResponse("contact.html", {
+            "request": request,
+            "contact": CONTACT_CONFIG,
+            "error": "Bitte füllen Sie alle erforderlichen Felder aus."
+        })
+
+    # Store in database if enabled
+    if CONTACT_CONFIG.get('store_in_db', True):
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('''INSERT INTO contact_messages (name, email, subject, message) 
+                     VALUES (?, ?, ?, ?)''',
+                  (name, email, subject, message))
+        conn.commit()
+        conn.close()
+
+    # Send email if enabled
+    if CONTACT_CONFIG.get('send_email', False):
+        email_sent = send_contact_email(name, email, subject, message)
+        if not email_sent:
+            print("Warning: Failed to send contact form email")
+
+    # Redirect to contact page with success message
+    return RedirectResponse(url="/contact?success=true", status_code=302)
 
 if __name__ == '__main__':
     import uvicorn

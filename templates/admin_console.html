@@ -29,8 +29,26 @@
                 <div class="stat-number">{{ total_users }}</div>
                 <div class="stat-label">Total Users</div>
             </div>
+            <div class="stat-card {% if unread_messages > 0 %}has-unread{% endif %}">
+                <div class="stat-number">{{ total_messages }}</div>
+                <div class="stat-label">Contact Messages</div>
+                {% if unread_messages > 0 %}
+                <div class="unread-badge">{{ unread_messages }} unread</div>
+                {% endif %}
+            </div>
         </div>
     </div>
+
+    <!-- Contact Messages -->
+    {% if total_messages > 0 %}
+    <div class="card">
+        <h3>Contact Messages</h3>
+        <p>View and manage contact form submissions.</p>
+        <a href="/admin/messages" class="btn btn-primary">
+            View Messages {% if unread_messages > 0 %}({{ unread_messages }} unread){% endif %}
+        </a>
+    </div>
+    {% endif %}
 
     <!-- Export -->
     <div class="card">
@@ -174,6 +192,23 @@
     border-radius: 8px;
     font-size: 14px;
     min-width: 200px;
+}
+
+.stat-card.has-unread {
+    position: relative;
+    border: 2px solid var(--warning-color);
+}
+
+.unread-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--warning-color);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
 }
 </style>
 {% endblock %}

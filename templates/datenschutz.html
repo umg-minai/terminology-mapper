@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Datenschutzerklärung - Medical Term Mapper{% endblock %}
+
+{% block content %}
+<div class="datenschutz-container">
+    <div class="card">
+        <h1>Datenschutzerklärung</h1>
+
+        <div class="datenschutz-section">
+            <h3>Datenverarbeitende Stelle und verantwortliche Stelle im datenschutzrechtlichen Sinne</h3>
+            {% if datenschutz.type == 'private' %}
+            {# Private person #}
+            <p>
+                <strong>{{ datenschutz.private_name or datenschutz.organization }}</strong><br>
+                {{ datenschutz.private_street or datenschutz.street }}<br>
+                {{ datenschutz.private_city or datenschutz.city }}
+            </p>
+            <p>
+                {% if datenschutz.private_phone or datenschutz.phone %}<strong>Telefon:</strong> {{ datenschutz.private_phone or datenschutz.phone }}<br>{% endif %}
+                {% if datenschutz.private_email or datenschutz.email %}<strong>E-Mail:</strong> <a href="mailto:{{ datenschutz.private_email or datenschutz.email }}">{{ datenschutz.private_email or datenschutz.email }}</a><br>{% endif %}
+                {% if datenschutz.website %}<strong>Internet:</strong> {{ datenschutz.website }}{% endif %}
+            </p>
+            {% else %}
+            {# Organization #}
+            <p>
+                <strong>{{ datenschutz.organization }}</strong><br>
+                {{ datenschutz.street }}<br>
+                {{ datenschutz.city }}
+            </p>
+            <p>
+                {% if datenschutz.phone %}<strong>Telefon:</strong> {{ datenschutz.phone }}<br>{% endif %}
+                {% if datenschutz.fax %}<strong>Telefax:</strong> {{ datenschutz.fax }}<br>{% endif %}
+                {% if datenschutz.email %}<strong>E-Mail:</strong> <a href="mailto:{{ datenschutz.email }}">{{ datenschutz.email }}</a><br>{% endif %}
+                {% if datenschutz.website %}<strong>Internet:</strong> {{ datenschutz.website }}{% endif %}
+            </p>
+            {% if datenschutz.representatives %}
+            <p>
+                <strong>Vertretungsberechtigter Vorstand:</strong><br>
+                {% for rep in datenschutz.representatives %}
+                {{ rep }}<br>
+                {% endfor %}
+            </p>
+            {% endif %}
+            {% if datenschutz.register_court and datenschutz.register_number %}
+            <p>
+                <strong>Registergericht:</strong> {{ datenschutz.register_court }}<br>
+                <strong>Registernummer:</strong> {{ datenschutz.register_number }}
+            </p>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        <div class="datenschutz-section">
+            <h3>Was sind personenbezogene Daten?</h3>
+            <p>
+                Personenbezogene Daten sind Einzelangaben über persönliche oder sachliche 
+                Verhältnisse einer bestimmten oder bestimmbaren natürlichen Person.
+            </p>
+        </div>
+
+        <div class="datenschutz-section">
+            <h3>Wo und wann werden personenbezogene Daten erhoben und gespeichert?</h3>
+            <p>
+                Die Nutzung unserer Webseite ist ohne Angabe personenbezogener Daten möglich. 
+                Im Rahmen der Studie werden keine personenbezogenen Daten erfasst. Personenbezogene 
+                Daten wie Namen oder Email-Adresse, welche bei direkter Kontaktaufnahme über Email 
+                oder Telefon in unsere Kenntnis gelangen, werden nicht mit Studiendaten in 
+                Zusammenhang gebracht.
+            </p>
+            <p>
+                Eine Speicherung von IP-Adressen oder anderen identifizierbaren Verbindungsdaten 
+                durch uns erfolgt nicht. Eine zeitweilige Speicherung von möglichen Identifizierungsdaten 
+                wie IP-Adressen kann durch unseren Webseitenprovider{% if datenschutz.hosting_provider %} 
+                ({{ datenschutz.hosting_provider }}){% endif %} zum Zwecke der Datensicherheit in Form 
+                von Logfiles erfolgen.{% if datenschutz.hosting_provider %} Siehe Datenschutzerklärung 
+                der {{ datenschutz.hosting_provider }}.{% endif %} Eine personenbezogene Auswertung und 
+                Analyse solcher Daten durch uns erfolgt nicht.
+            </p>
+        </div>
+
+        <div class="datenschutz-section">
+            <h3>Einsatz von Cookies</h3>
+            <p>
+                Cookies sind Dateien, die auf der Festplatte Ihres Computers abgespeichert werden. 
+                Der Einsatz von Cookies erfolgt auf dieser Webseite ohne Ihre ausdrückliche Zustimmung. 
+                Wir verwenden Cookies ausschließlich, um zu erkennen, dass die Angaben die Sie auf den 
+                einzelnen Seiten der Umfrage abgeben, zusammengehören. Wir setzen auf dieser Webseite 
+                permanente und Session Cookies ein. Eine Identifizierung Ihrer Person anhand dieser 
+                Cookies ist nicht möglich.
+            </p>
+            <p>
+                Sie können Ihren Browser so konfigurieren, dass er alle Cookies akzeptiert, alle 
+                Cookies ablehnt oder Sie benachrichtigt, wenn ein Cookie gesendet wird. Jeder Browser 
+                ist anders, deshalb sehen Sie bitte das "Hilfe"-Menü Ihres Browsers ein, um zu erfahren, 
+                wie Sie Ihre Cookie-Präferenzen ändern können, falls Sie dieses wünschen. Im Microsoft 
+                Internet Explorer können Sie beispielsweise Cookies abschalten oder löschen, indem Sie 
+                "Tools/Internetoptionen" wählen und Ihre Datenschutzeinstellungen prüfen oder "Cookies 
+                löschen" auswählen.
+            </p>
+            <p>
+                Unsere Webseite kann auch ohne Verwendung von Cookies genutzt werden, wobei möglicherweise 
+                die Angaben, welche Sie auf den einzelnen Seiten der Umfrage abgeben, nicht als 
+                zusammengehörig erkannt werden können. Wir tauschen keine Cookies mit Internetseiten 
+                Dritter oder externen Datenlieferanten aus.
+            </p>
+        </div>
+
+        <div class="datenschutz-section">
+            <h3>Weitergabe von Personendaten an Dritte</h3>
+            <p>
+                Sowohl im Rahmen von Kontaktaufnahme zu unserer Kenntnis gelangte personenbezogene 
+                Daten, als auch im Rahmen der Studie erfassten Daten werden niemals an Dritte 
+                weitergegeben, wenn Sie uns nicht ausdrücklich Ihr Einverständnis gegeben haben oder 
+                wir zur Herausgabe verpflichtet sind, beispielsweise aufgrund einer gerichtlichen 
+                Verfügung oder einer behördlichen Anordnung.
+            </p>
+            <p>
+                Eine Veröffentlichung der gesamten Populationsdaten der Studie, welche keine 
+                Rückschlüsse auf einzelne Teilnehmer an der Studie erlauben, erfolgt in einer 
+                wissenschaftlichen Zeitschrift.
+            </p>
+        </div>
+
+        <div class="datenschutz-section">
+            <h3>Datensicherheit</h3>
+            <p>
+                Um einen unbefugten Zugang oder eine unbefugte Offenlegung zu verhindern und um die 
+                Richtigkeit der Daten zu gewährleisten und die berechtigte Nutzung der Daten 
+                sicherzustellen, verwenden wir entsprechende technische und organisatorische Verfahren. 
+                Dennoch ist keine elektronische Kommunikation vollkommen sicher. Das bedeutet, dass 
+                alle Daten und Informationen, die freiwillig an uns übermittelt werden, von Dritten 
+                im Wege einer widerrechtlichen Datenbeschaffung erlangt werden könnten. Für die 
+                Offenlegung von Informationen aufgrund von Fehlern und / oder unautorisierten Zugriffen 
+                bei der Datenübertragung durch Dritte können wir keine Verantwortung oder Haftung 
+                übernehmen.
+            </p>
+        </div>
+
+        <div class="datenschutz-section">
+            <h3>Ihre Rechte</h3>
+            <p>
+                Sie haben bezüglich der personenbezogenen Daten das Recht auf unentgeltliche Auskunft. 
+                Zusätzlich haben Sie das Recht auf Berichtigung, Sperrung und Löschung Ihrer 
+                personenbezogenen Daten, soweit dem keine gesetzliche Aufbewahrungspflicht entgegensteht. 
+                Diese Rechte sind auszuüben durch eine Nachricht auf dem Postweg an die oben angegebene 
+                datenverarbeitende Stelle oder durch eine E-mail an: 
+                <a href="mailto:{{ datenschutz.contact_email }}">{{ datenschutz.contact_email }}</a>
+            </p>
+        </div>
+
+        <div class="datenschutz-section">
+            <h3>Vorbehalt der Änderung</h3>
+            <p>
+                Der Betreiber der Webseite behält sich das Recht vor, die obige Erklärung zum 
+                Datenschutz unter Beachtung aktueller rechtlicher Vorgaben jederzeit anzupassen.
+            </p>
+            {% if datenschutz.last_updated %}
+            <p class="last-updated">
+                Letzte Aktualisierung: {{ datenschutz.last_updated }}
+            </p>
+            {% endif %}
+        </div>
+
+        <div class="contact-info-box">
+            <h3>Kontakt</h3>
+            <p>
+                Bei Fragen zum Datenschutz oder zur Ausübung Ihrer Rechte können Sie uns 
+                gerne über unser <a href="/contact">Kontaktformular</a> erreichen oder 
+                direkt per E-Mail an: 
+                <a href="mailto:{{ datenschutz.contact_email }}">{{ datenschutz.contact_email }}</a>
+            </p>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/" class="btn btn-secondary">Zurück zur Startseite</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.datenschutz-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.datenschutz-container h1 {
+    margin-bottom: 30px;
+    color: var(--text-primary);
+}
+
+.datenschutz-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.datenschutz-section:last-of-type {
+    border-bottom: none;
+}
+
+.datenschutz-section h3 {
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    font-size: 18px;
+}
+
+.datenschutz-section p {
+    line-height: 1.8;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+}
+
+.datenschutz-section a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.datenschutz-section a:hover {
+    text-decoration: underline;
+}
+
+.last-updated {
+    font-style: italic;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.contact-info-box {
+    margin-top: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%);
+    border: 2px solid var(--primary-color);
+    border-radius: 12px;
+}
+
+.contact-info-box h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    font-size: 18px;
+}
+
+.contact-info-box p {
+    margin: 0;
+    line-height: 1.8;
+}
+
+.contact-info-box a {
+    color: var(--primary-color);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.contact-info-box a:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

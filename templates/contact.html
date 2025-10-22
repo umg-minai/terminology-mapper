@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Kontakt - Medical Term Mapper{% endblock %}
+
+{% block content %}
+<div class="contact-container">
+    <div class="card">
+        <h1>Kontakt</h1>
+        <p class="subtitle">Haben Sie Fragen oder Anregungen? Wir freuen uns auf Ihre Nachricht!</p>
+
+        {% if success %}
+        <div class="success-message">
+            <strong>✓ Vielen Dank!</strong><br>
+            Ihre Nachricht wurde erfolgreich gesendet. Wir werden uns so schnell wie möglich bei Ihnen melden.
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="error">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/contact/submit" class="contact-form">
+            <div class="form-group">
+                <label for="name">Name *</label>
+                <input type="text" id="name" name="name" required 
+                       placeholder="Ihr Name">
+            </div>
+
+            <div class="form-group">
+                <label for="email">E-Mail *</label>
+                <input type="email" id="email" name="email" required 
+                       placeholder="ihre.email@beispiel.de">
+            </div>
+
+            <div class="form-group">
+                <label for="subject">Betreff *</label>
+                <select id="subject" name="subject" required>
+                    <option value="">Bitte wählen...</option>
+                    {% for subj in contact.subjects %}
+                    <option value="{{ subj }}">{{ subj }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="message">Nachricht *</label>
+                <textarea id="message" name="message" rows="8" required 
+                          placeholder="Ihre Nachricht an uns..."></textarea>
+            </div>
+
+            <div class="form-info">
+                <p>* Pflichtfelder</p>
+                <p class="privacy-note">
+                    Ihre Daten werden vertraulich behandelt und nicht an Dritte weitergegeben. 
+                    Weitere Informationen finden Sie in unserer 
+                    <a href="/datenschutz">Datenschutzerklärung</a>.
+                </p>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary btn-large">Nachricht senden</button>
+                <a href="/" class="btn btn-secondary">Zurück</a>
+            </div>
+        </form>
+
+        {% if contact.email %}
+        <div class="alternative-contact">
+            <h3>Alternative Kontaktmöglichkeiten</h3>
+            <p>Sie können uns auch direkt per E-Mail erreichen:</p>
+            <p><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.contact-container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.contact-container h1 {
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.contact-container .subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+    font-size: 16px;
+}
+
+.success-message {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    border-left: 4px solid var(--success-color);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.contact-form {
+    margin-top: 20px;
+}
+
+.contact-form .form-group {
+    margin-bottom: 25px;
+}
+
+.contact-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.contact-form textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.contact-form input[type="email"] {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.contact-form input[type="email"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.form-info {
+    margin: 25px 0;
+    padding: 15px;
+    background: var(--background);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.form-info p {
+    margin: 8px 0;
+    color: var(--text-secondary);
+}
+
+.privacy-note {
+    margin-top: 12px;
+    line-height: 1.6;
+}
+
+.privacy-note a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.privacy-note a:hover {
+    text-decoration: underline;
+}
+
+.alternative-contact {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid var(--border-color);
+}
+
+.alternative-contact h3 {
+    font-size: 18px;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.alternative-contact p {
+    margin: 10px 0;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.alternative-contact a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.alternative-contact a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .contact-container {
+        padding: 10px;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

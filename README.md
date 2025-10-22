@@ -38,22 +38,40 @@ A web-based application for mapping medical terms to standardized terminologies 
 pip install -r requirements.txt
 ```
 
-2. Make sure your medical terms are in `data/data.CSV` with format:
+2. Set up configuration:
+```bash
+cp config.example.yaml config.yaml
+```
+Then edit `config.yaml` with your settings (see [CONFIG_SETUP.md](CONFIG_SETUP.md) for details).
+
+3. Make sure your medical terms are in the CSV file specified in your configuration (default: `data/data.CSV`) with format:
 ```
 Kategorie;Item
 Administration;ADT-Update
 Administration;Ambulanz
 ```
 
-3. Run the application:
+4. Run the application:
 ```bash
 python main.py
 ```
 
-4. Open your browser and navigate to:
+5. Open your browser and navigate to:
 ```
 http://localhost:5000
 ```
+
+## Configuration
+
+All configuration is stored in `config.yaml` (not tracked by Git). Key settings include:
+
+- **Passwords**: User and admin authentication
+- **Data Import**: CSV file path, encoding, and delimiter
+- **Imprint & Privacy**: Legal compliance information (required in Germany)
+- **Contact Form**: Enable/disable and configure email notifications
+- **Email**: SMTP settings for sending contact form emails
+
+See [CONFIGURATION.md](CONFIGURATION.md) for complete documentation.
 
 ## How It Works
 
@@ -81,10 +99,18 @@ http://localhost:5000
 
 ## Data Format
 
-The application expects a CSV file (`data/data.CSV`) with semicolon separator:
+The application imports terms from a CSV file. The path, encoding, and delimiter are configurable in `config.yaml`:
+
+```yaml
+data_import:
+  csv_path: data/data.CSV
+  encoding: latin-1
+  delimiter: ";"
+```
+
+CSV format requirements:
 - Column 1: **Kategorie** (Category)
 - Column 2: **Item** (Medical term)
-- Encoding: UTF-8
 
 Example:
 ```csv

@@ -555,6 +555,11 @@ footer p {
     text-decoration: underline;
 }
 
+.footer-links .separator {
+    color: var(--border-color);
+    padding: 0 5px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .header-content {
