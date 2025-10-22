@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 import sqlite3
 import secrets
 import csv
@@ -50,7 +51,15 @@ DATENSCHUTZ_CONFIG = config['datenschutz']
 CONTACT_CONFIG = config['contact']
 EMAIL_CONFIG = config['email']
 
+# Middleware to add X-Robots-Tag header to all responses
+class RobotsMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, nosnippet"
+        return response
+
 app = FastAPI()
+app.add_middleware(RobotsMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=secrets.token_hex(32))
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -764,6 +773,13 @@ async def delete_message(request: Request, message_id: int):
     conn.close()
 
     return RedirectResponse(url="/admin/messages", status_code=302)
+
+# Robots.txt Route
+@app.get("/robots.txt")
+async def robots_txt():
+    """Serve robots.txt to prevent search engine indexing"""
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse("User-agent: *\nDisallow: /\n", headers={"X-Robots-Tag": "noindex, nofollow"})
 
 # Imprint Route
 @app.get("/imprint", response_class=HTMLResponse)
