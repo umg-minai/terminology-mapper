@@ -329,26 +329,65 @@ def import_terms_from_csv(force=False):
     encoding = DATA_IMPORT_CONFIG['encoding']
     delimiter = DATA_IMPORT_CONFIG['delimiter']
     
+    stats = {
+        'total_rows': 0,
+        'imported': 0,
+        'skipped_empty': 0,
+        'skipped_duplicate': 0,
+        'skipped_rows': []
+    }
+    
     try:
         with open(csv_path, 'r', encoding=encoding) as f:
             reader = csv.DictReader(f, delimiter=delimiter)
-            for row in reader:
+            for line_num, row in enumerate(reader, start=2):  # start=2 because row 1 is header
+                stats['total_rows'] += 1
                 category = row.get('Kategorie', '').strip()
                 term = row.get('Item', '').strip()
-                if category and term:
-                    try:
-                        c.execute('INSERT INTO terms (category, term) VALUES (?, ?)', (category, term))
-                    except sqlite3.IntegrityError:
-                        pass  # Skip duplicates
+                
+                if not category or not term:
+                    stats['skipped_empty'] += 1
+                    stats['skipped_rows'].append({
+                        'line': line_num,
+                        'reason': 'empty category or term',
+                        'category': category or '(empty)',
+                        'term': term or '(empty)'
+                    })
+                    continue
+                
+                try:
+                    c.execute('INSERT INTO terms (category, term) VALUES (?, ?)', (category, term))
+                    stats['imported'] += 1
+                except sqlite3.IntegrityError:
+                    stats['skipped_duplicate'] += 1
+                    stats['skipped_rows'].append({
+                        'line': line_num,
+                        'reason': 'duplicate',
+                        'category': category,
+                        'term': term
+                    })
         
         conn.commit()
-        print(f"Successfully imported terms from {csv_path}")
+        print(f"CSV Import Summary:")
+        print(f"  Total rows in CSV: {stats['total_rows']}")
+        print(f"  Successfully imported: {stats['imported']}")
+        print(f"  Skipped (empty): {stats['skipped_empty']}")
+        print(f"  Skipped (duplicate): {stats['skipped_duplicate']}")
+        
+        if stats['skipped_rows']:
+            print(f"\nSkipped rows details:")
+            for skip in stats['skipped_rows']:
+                print(f"  Line {skip['line']}: {skip['reason']} - Category: '{skip['category']}', Term: '{skip['term']}'")
+        
     except FileNotFoundError:
         print(f"WARNING: CSV file not found at {csv_path}")
     except Exception as e:
         print(f"ERROR importing terms: {e}")
+        traceback.print_exc()
     finally:
         conn.close()
+    
+    return stats
 
 def get_current_user(request: Request):
     """Get current user from session"""
