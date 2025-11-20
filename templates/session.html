@@ -54,6 +54,15 @@
                                         <input type="radio" name="vocab_0" value="LOINC">
                                         <span>LOINC</span>
                                     </label>
+                                    <label class="radio-option">
+                                        <input type="radio" name="vocab_0" value="OTHER" class="vocab-other-radio" data-vocab-index="0">
+                                        <span>Other</span>
+                                    </label>
+                                </div>
+                                <div class="vocab-other-input" data-vocab-index="0" style="display: none; margin-top: 10px;">
+                                    <input type="text" class="vocab-other-text" data-vocab-index="0"
+                                           placeholder="Enter vocabulary name (required)" 
+                                           style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
                                 </div>
                             </div>
                         </div>
@@ -164,6 +173,28 @@ function setupCodeInput(index) {
 // Setup initial input
 setupCodeInput(0);
 
+// Setup vocabulary "Other" option toggle
+function setupVocabOtherToggle(index) {
+    const otherRadio = document.querySelector(`input.vocab-other-radio[data-vocab-index="${index}"]`);
+    const otherInput = document.querySelector(`.vocab-other-input[data-vocab-index="${index}"]`);
+    const allRadios = document.querySelectorAll(`input[name="vocab_${index}"]`);
+
+    allRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'OTHER') {
+                otherInput.style.display = 'block';
+                otherInput.querySelector('.vocab-other-text').focus();
+            } else {
+                otherInput.style.display = 'none';
+                otherInput.querySelector('.vocab-other-text').value = '';
+            }
+        });
+    });
+}
+
+// Setup initial vocabulary toggle
+setupVocabOtherToggle(0);
+
 // Add another code entry
 document.getElementById('addCodeBtn').addEventListener('click', function() {
     const container = document.getElementById('codesContainer');
@@ -200,6 +231,15 @@ document.getElementById('addCodeBtn').addEventListener('click', function() {
                             <input type="radio" name="vocab_${newIndex}" value="LOINC">
                             <span>LOINC</span>
                         </label>
+                        <label class="radio-option">
+                            <input type="radio" name="vocab_${newIndex}" value="OTHER" class="vocab-other-radio" data-vocab-index="${newIndex}">
+                            <span>Other</span>
+                        </label>
+                    </div>
+                    <div class="vocab-other-input" data-vocab-index="${newIndex}" style="display: none; margin-top: 10px;">
+                        <input type="text" class="vocab-other-text" data-vocab-index="${newIndex}"
+                               placeholder="Enter vocabulary name (required)" 
+                               style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
                     </div>
                 </div>
             </div>
@@ -215,6 +255,7 @@ document.getElementById('addCodeBtn').addEventListener('click', function() {
 
     container.appendChild(newEntry);
     setupCodeInput(newIndex);
+    setupVocabOtherToggle(newIndex);
 
     // Setup remove button
     newEntry.querySelector('.btn-remove-code').addEventListener('click', function() {
@@ -241,6 +282,7 @@ document.getElementById('mappingForm').addEventListener('submit', function(e) {
     // Collect all codes
     const codes = [];
     const codeEntries = document.querySelectorAll('.code-entry');
+    let validationError = false;
 
     codeEntries.forEach(entry => {
         const index = entry.dataset.index;
@@ -250,13 +292,34 @@ document.getElementById('mappingForm').addEventListener('submit', function(e) {
 
         const code = codeInput.value.trim();
         if (code) {
+            let vocabulary = vocabRadio ? vocabRadio.value : 'SNOMED';
+            
+            // If "Other" is selected, get the custom vocabulary name
+            if (vocabulary === 'OTHER') {
+                const otherInput = entry.querySelector(`.vocab-other-text[data-vocab-index="${index}"]`);
+                const otherValue = otherInput ? otherInput.value.trim() : '';
+                
+                if (!otherValue) {
+                    alert('Please enter a vocabulary name for "Other" or select a different vocabulary option.');
+                    otherInput.focus();
+                    validationError = true;
+                    return;
+                }
+                
+                vocabulary = otherValue;
+            }
+            
             codes.push({
                 code: code,
-                vocabulary: vocabRadio ? vocabRadio.value : 'SNOMED',
+                vocabulary: vocabulary,
                 approximate_match: approxCheckbox ? approxCheckbox.checked : false
             });
         }
     });
+
+    if (validationError) {
+        return;
+    }
 
     // Set the JSON data
     document.getElementById('codesJson').value = JSON.stringify(codes);
