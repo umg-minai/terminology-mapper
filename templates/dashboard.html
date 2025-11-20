@@ -31,7 +31,7 @@
         <p class="progress-text">
             <strong>{{ progress.completed_terms }}</strong> of <strong>{{ progress.total_terms }}</strong> terms completed ({{ progress.percentage }}%)
         </p>
-        <p class="help-text">Terms with at least 2 mappings are considered complete</p>
+        <p class="help-text">Terms with at least {{ required_raters }} mappings are considered complete</p>
     </div>
 
     <!-- User Stats -->

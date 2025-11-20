@@ -13,6 +13,10 @@ data_import:
   encoding: latin-1
   delimiter: ";"
 
+# Mapping Configuration
+mapping:
+  required_raters: 2  # Number of unique users required to consider a term "complete"
+
 # Imprint Configuration (Impressum - required for German law compliance)
 imprint:
   enabled: true

@@ -107,7 +107,7 @@
         <!-- Additional Info -->
         <div class="info-banner">
             <p><strong>Current mappings for this term:</strong> {{ term.mapping_count }}</p>
-            {% if term.mapping_count < 2 %}
+            {% if term.mapping_count < required_raters %}
             <p class="highlight">This term needs more mappings!</p>
             {% endif %}
         </div>

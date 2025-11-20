@@ -48,6 +48,8 @@ DATABASE = config['database']['path']
 GLOBAL_PASSWORD = config['passwords']['global_password']
 ADMIN_PASSWORD = config['passwords']['admin_password']
 DATA_IMPORT_CONFIG = config['data_import']
+MAPPING_CONFIG = config.get('mapping', {})
+REQUIRED_RATERS = MAPPING_CONFIG.get('required_raters', 2)
 IMPRINT_CONFIG = config['imprint']
 DATENSCHUTZ_CONFIG = config['datenschutz']
 CONTACT_CONFIG = config['contact']
@@ -370,15 +372,15 @@ def get_overall_progress():
     c.execute('SELECT COUNT(*) FROM terms')
     total_terms = c.fetchone()[0]
 
-    # Terms with at least 2 mappings from UNIQUE users
+    # Terms with at least REQUIRED_RATERS mappings from UNIQUE users
     c.execute('''
         SELECT COUNT(*) FROM (
             SELECT term_id
             FROM mappings
             GROUP BY term_id
-            HAVING COUNT(DISTINCT user_id) >= 2
+            HAVING COUNT(DISTINCT user_id) >= ?
         )
-    ''')
+    ''', (REQUIRED_RATERS,))
     completed_terms = c.fetchone()[0]
 
     conn.close()
@@ -446,7 +448,10 @@ async def index(request: Request):
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     """Login page"""
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "required_raters": REQUIRED_RATERS
+    })
 
 @app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
@@ -505,7 +510,8 @@ async def dashboard(request: Request):
         "stats": user_stats,
         "progress": overall_progress,
         "user_progress": user_progress,
-        "leaderboard": leaderboard
+        "leaderboard": leaderboard,
+        "required_raters": REQUIRED_RATERS
     })
 
 @app.post("/session/start")
@@ -554,7 +560,8 @@ async def mapping_session(request: Request):
         "term": current_term,
         "current": current_index + 1,
         "total": len(session_terms),
-        "progress": progress_percent
+        "progress": progress_percent,
+        "required_raters": REQUIRED_RATERS
     })
 
 @app.post("/session/submit")
