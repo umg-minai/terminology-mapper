@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Form, Depends, HTTPException
+from fastapi import FastAPI, Request, Form, Depends, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -254,16 +254,75 @@ def init_db():
     conn.commit()
     conn.close()
 
-def import_terms_from_csv():
+def validate_csv_file(file_path: str, encoding: str, delimiter: str):
+    """Validate CSV file format and content"""
+    errors = []
+    warnings = []
+    
+    try:
+        with open(file_path, 'r', encoding=encoding) as f:
+            reader = csv.DictReader(f, delimiter=delimiter)
+            
+            # Check if required columns exist
+            if reader.fieldnames is None:
+                errors.append("CSV file is empty or has no headers")
+                return False, errors, warnings
+            
+            if 'Kategorie' not in reader.fieldnames:
+                errors.append("Missing required column: 'Kategorie'")
+            if 'Item' not in reader.fieldnames:
+                errors.append("Missing required column: 'Item'")
+            
+            if errors:
+                return False, errors, warnings
+            
+            # Check rows
+            row_count = 0
+            empty_rows = 0
+            for i, row in enumerate(reader, start=2):  # start=2 because row 1 is header
+                row_count += 1
+                category = row.get('Kategorie', '').strip()
+                term = row.get('Item', '').strip()
+                
+                if not category and not term:
+                    empty_rows += 1
+                elif not category:
+                    warnings.append(f"Row {i}: Missing category")
+                elif not term:
+                    warnings.append(f"Row {i}: Missing term")
+            
+            if row_count == 0:
+                errors.append("CSV file has no data rows")
+                return False, errors, warnings
+            
+            if empty_rows == row_count:
+                errors.append("All rows are empty")
+                return False, errors, warnings
+            
+            # Success
+            return True, errors, warnings
+            
+    except UnicodeDecodeError as e:
+        errors.append(f"Encoding error: Unable to read file with {encoding} encoding - {str(e)}")
+        return False, errors, warnings
+    except csv.Error as e:
+        errors.append(f"CSV format error: {str(e)}")
+        return False, errors, warnings
+    except Exception as e:
+        errors.append(f"Unexpected error: {str(e)}")
+        return False, errors, warnings
+
+def import_terms_from_csv(force=False):
     """Import terms from data.CSV with category and item columns"""
     conn = get_db()
     c = conn.cursor()
 
     # Check if terms already imported
-    c.execute('SELECT COUNT(*) FROM terms')
-    if c.fetchone()[0] > 0:
-        conn.close()
-        return
+    if not force:
+        c.execute('SELECT COUNT(*) FROM terms')
+        if c.fetchone()[0] > 0:
+            conn.close()
+            return
 
     # Import terms from CSV using configuration
     csv_path = DATA_IMPORT_CONFIG['csv_path']
@@ -693,7 +752,9 @@ async def admin_console(request: Request):
         "total_users": total_users,
         "total_messages": total_messages,
         "unread_messages": unread_messages,
-        "users": users
+        "users": users,
+        "csv_encoding": DATA_IMPORT_CONFIG['encoding'],
+        "csv_delimiter": DATA_IMPORT_CONFIG['delimiter']
     })
 
 @app.get("/admin/export")
@@ -787,6 +848,70 @@ async def reset_user_mappings(request: Request, username: str = Form(...)):
     conn.close()
 
     return RedirectResponse(url=f"/admin/console?message={message}", status_code=302)
+
+@app.post("/admin/upload-csv")
+async def upload_csv(request: Request, csv_file: UploadFile = File(...)):
+    """Upload and validate a new CSV file, then re-import terms"""
+    if not request.session.get('admin_logged_in'):
+        return RedirectResponse(url="/admin", status_code=302)
+
+    import tempfile
+    import shutil
+    
+    # Create a temporary file to validate the uploaded CSV
+    temp_path = None
+    try:
+        # Read the uploaded file
+        content = await csv_file.read()
+        
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.csv') as temp_file:
+            temp_file.write(content)
+            temp_path = temp_file.name
+        
+        # Validate the CSV file
+        encoding = DATA_IMPORT_CONFIG['encoding']
+        delimiter = DATA_IMPORT_CONFIG['delimiter']
+        is_valid, errors, warnings = validate_csv_file(temp_path, encoding, delimiter)
+        
+        if not is_valid:
+            os.unlink(temp_path)
+            error_msg = "CSV validation failed: " + "; ".join(errors)
+            return RedirectResponse(url=f"/admin/console?error={error_msg}", status_code=302)
+        
+        # Backup the current CSV file
+        csv_path = DATA_IMPORT_CONFIG['csv_path']
+        backup_path = csv_path + f".backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        if os.path.exists(csv_path):
+            shutil.copy2(csv_path, backup_path)
+        
+        # Replace the CSV file
+        shutil.move(temp_path, csv_path)
+        temp_path = None  # Moved, don't try to delete
+        
+        # Delete all mappings and terms
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('DELETE FROM mappings')
+        c.execute('DELETE FROM terms')
+        conn.commit()
+        conn.close()
+        
+        # Re-import terms
+        import_terms_from_csv(force=True)
+        
+        warning_msg = ""
+        if warnings:
+            warning_msg = f" (with {len(warnings)} warnings)"
+        
+        message = f"CSV file uploaded successfully{warning_msg}. Database reset and terms re-imported. Backup saved to {os.path.basename(backup_path)}"
+        return RedirectResponse(url=f"/admin/console?message={message}", status_code=302)
+        
+    except Exception as e:
+        if temp_path and os.path.exists(temp_path):
+            os.unlink(temp_path)
+        error_msg = f"Error uploading CSV: {str(e)}"
+        return RedirectResponse(url=f"/admin/console?error={error_msg}", status_code=302)
 
 @app.get("/admin/logout")
 async def admin_logout(request: Request):
