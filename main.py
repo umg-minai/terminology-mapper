@@ -795,27 +795,31 @@ async def export_mappings(request: Request):
 
 @app.post("/admin/reset/mappings")
 async def reset_mappings(request: Request):
-    """Delete all mappings"""
+    """Delete all mappings and users"""
     if not request.session.get('admin_logged_in'):
         return RedirectResponse(url="/admin", status_code=302)
 
     conn = get_db()
     c = conn.cursor()
     c.execute('DELETE FROM mappings')
+    c.execute('DELETE FROM sessions')
+    c.execute('DELETE FROM users')
     conn.commit()
     conn.close()
 
-    return RedirectResponse(url="/admin/console?message=All mappings deleted", status_code=302)
+    return RedirectResponse(url="/admin/console?message=All mappings and users deleted", status_code=302)
 
 @app.post("/admin/reset/all")
 async def reset_all(request: Request):
-    """Delete all mappings and terms"""
+    """Delete all mappings, terms, and users"""
     if not request.session.get('admin_logged_in'):
         return RedirectResponse(url="/admin", status_code=302)
 
     conn = get_db()
     c = conn.cursor()
     c.execute('DELETE FROM mappings')
+    c.execute('DELETE FROM sessions')
+    c.execute('DELETE FROM users')
     c.execute('DELETE FROM terms')
     conn.commit()
     conn.close()
@@ -889,10 +893,12 @@ async def upload_csv(request: Request, csv_file: UploadFile = File(...)):
         shutil.move(temp_path, csv_path)
         temp_path = None  # Moved, don't try to delete
         
-        # Delete all mappings and terms
+        # Delete all mappings, terms, and users
         conn = get_db()
         c = conn.cursor()
         c.execute('DELETE FROM mappings')
+        c.execute('DELETE FROM sessions')
+        c.execute('DELETE FROM users')
         c.execute('DELETE FROM terms')
         conn.commit()
         conn.close()

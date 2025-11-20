@@ -66,7 +66,7 @@
     <!-- CSV Upload -->
     <div class="card danger-zone">
         <h3>Upload New Terms CSV</h3>
-        <p class="warning-text">⚠️ This will DELETE ALL mappings and terms, then import from the new CSV file!</p>
+        <p class="warning-text">⚠️ This will DELETE ALL mappings, users, and terms, then import from the new CSV file!</p>
         <div class="upload-info">
             <h4>CSV File Requirements:</h4>
             <ul>
@@ -77,7 +77,7 @@
             </ul>
         </div>
         <form method="POST" action="/admin/upload-csv" enctype="multipart/form-data" 
-              onsubmit="return confirm('⚠️ DANGER: This will DELETE ALL MAPPINGS AND TERMS and replace them with the uploaded CSV file. A backup will be created. Are you absolutely sure you want to continue?');">
+              onsubmit="return confirm('⚠️ DANGER: This will DELETE ALL MAPPINGS, USERS, AND TERMS and replace them with the uploaded CSV file. A backup will be created. Are you absolutely sure you want to continue?');">
             <div class="upload-form">
                 <input type="file" name="csv_file" accept=".csv" required class="file-input">
                 <button type="submit" class="btn btn-danger">Upload & Replace Terms</button>
@@ -92,20 +92,20 @@
 
         <div class="admin-action">
             <div>
-                <h4>Delete All Mappings</h4>
-                <p>Removes all user mappings but keeps terms and users intact.</p>
+                <h4>Delete All Mappings & Users</h4>
+                <p>Removes all user mappings and user accounts but keeps terms intact.</p>
             </div>
-            <form method="POST" action="/admin/reset/mappings" onsubmit="return confirm('Are you sure you want to delete ALL mappings? This cannot be undone!');">
-                <button type="submit" class="btn btn-danger">Delete All Mappings</button>
+            <form method="POST" action="/admin/reset/mappings" onsubmit="return confirm('Are you sure you want to delete ALL mappings and users? This cannot be undone!');">
+                <button type="submit" class="btn btn-danger">Delete All Mappings & Users</button>
             </form>
         </div>
 
         <div class="admin-action">
             <div>
-                <h4>Reset Database (Mappings + Terms)</h4>
-                <p>Deletes all mappings and terms, then re-imports terms from CSV.</p>
+                <h4>Reset Database (Everything)</h4>
+                <p>Deletes all mappings, users, and terms, then re-imports terms from CSV.</p>
             </div>
-            <form method="POST" action="/admin/reset/all" onsubmit="return confirm('Are you sure you want to RESET THE ENTIRE DATABASE? This will delete all mappings and terms and re-import from CSV. This cannot be undone!');">
+            <form method="POST" action="/admin/reset/all" onsubmit="return confirm('Are you sure you want to RESET THE ENTIRE DATABASE? This will delete all mappings, users, and terms and re-import from CSV. This cannot be undone!');">
                 <button type="submit" class="btn btn-danger">Reset Database</button>
             </form>
         </div>
