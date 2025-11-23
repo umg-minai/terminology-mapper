@@ -12,49 +12,104 @@
     <div class="manual-content">
         <!-- Quick Start Section -->
         <section class="manual-section">
-            <h2>🚀 Quick Start</h2>
+            <h2>🚀 Quick Start Guide</h2>
             <div class="manual-text">
-                <p><strong>[Content to be added]</strong></p>
-                <p>This section will provide a brief overview of how to get started with the terminology mapping process.</p>
+                <p>This guide explains how to map clinical concepts from the dataset to standardized terminology codes.</p>
             </div>
         </section>
 
-        <!-- Understanding the Mapping Process -->
+        <!-- What to Enter -->
         <section class="manual-section">
-            <h2>🎯 Understanding the Mapping Process</h2>
+            <h2>📝 What Should Be Entered in the Fields?</h2>
             <div class="manual-text">
-                <p><strong>[Content to be added]</strong></p>
-                <p>This section will explain the overall goal and workflow of the terminology mapping system.</p>
+                <p>For each clinical term (e.g., "Intensive Care Medicine"), you should enter:</p>
+                
+                <h3>In the Input Fields:</h3>
+                <ul>
+                    <li><strong>Code field:</strong> The code found in a vocabulary (e.g., <code>828881000000106</code>)</li>
+                    <li><strong>Display Text field:</strong> The descriptive text for that code (e.g., <code>Intensive Care Medicine</code>)</li>
+                    <li><strong>Vocabulary dropdown:</strong> The vocabulary from which the code was taken (e.g., <code>SNOMED</code>)</li>
+                    <li><strong>Approximate match checkbox:</strong> Check this if the found code doesn't match exactly</li>
+                </ul>
+                
+                <h3>Complete Example:</h3>
+                <ul>
+                    <li>Term to map: <strong>Intensive Care Medicine</strong></li>
+                    <li>Code: <code>828881000000106</code></li>
+                    <li>Display Text: <code>Intensive Care Medicine</code></li>
+                    <li>Vocabulary: <code>SNOMED</code></li>
+                </ul>
+                
+                <h3>Additional Features:</h3>
+                <ul>
+                    <li>Use the <strong>"+ Add Another Concept"</strong> button to add more codes for the same clinical term</li>
+                    <li>Use the <strong>Comment field</strong> to explain:
+                        <ul>
+                            <li>Why a code does or doesn't fit</li>
+                            <li>Which alternatives you examined</li>
+                            <li>Why you chose an approximate match</li>
+                        </ul>
+                    </li>
+                </ul>
             </div>
         </section>
 
-        <!-- How to Map Terms -->
+        <!-- How to Find Codes -->
         <section class="manual-section">
-            <h2>🔍 How to Map Terms</h2>
+            <h2>🔍 How to Find the Right Code</h2>
             <div class="manual-text">
-                <h3>Step 1: Understanding the Term</h3>
-                <p><strong>[Content to be added]</strong></p>
+                <p><strong>Please search in the original vocabularies first:</strong></p>
                 
-                <h3>Step 2: Entering Codes and Display Texts</h3>
-                <p>For each concept you identify, you need to provide two pieces of information:</p>
+                <h3>1. SNOMED CT Browser</h3>
+                <p>🔗 <a href="https://browser.ihtsdotools.org/" target="_blank" rel="noopener noreferrer">https://browser.ihtsdotools.org/</a></p>
                 <ul>
-                    <li><strong>Code:</strong> The unique identifier from the vocabulary system (e.g., SNOMED CT, ICD-10, LOINC)</li>
-                    <li><strong>Display Text:</strong> The human-readable description that corresponds to the code</li>
-                </ul>
-                <p><strong>Example:</strong></p>
-                <ul>
-                    <li>Code: <code>I10</code></li>
-                    <li>Display Text: <code>Essential (primary) hypertension</code></li>
-                    <li>Vocabulary: <code>ICD-10</code></li>
+                    <li><strong>Use for:</strong> Diagnoses, clinical concepts, findings, procedures</li>
+                    <li><strong>Advantage:</strong> Excellent hierarchy navigation ("Is-a" relationships)</li>
                 </ul>
                 
-                <h3>Step 3: Selecting the Vocabulary</h3>
-                <p><strong>[Content to be added]</strong></p>
-                <p>Information about different vocabulary systems and when to use each one.</p>
+                <h3>2. LOINC Search</h3>
+                <p>🔗 <a href="https://loinc.org/search/" target="_blank" rel="noopener noreferrer">https://loinc.org/search/</a></p>
+                <ul>
+                    <li><strong>Use for:</strong> Laboratory values, measurements, vital parameters</li>
+                </ul>
                 
-                <h3>Step 4: Approximate Matches</h3>
-                <p><strong>[Content to be added]</strong></p>
-                <p>When and how to mark a code as an "approximate match".</p>
+                <h3>3. ICD-10 (ICD-Code.de)</h3>
+                <p>🔗 <a href="https://www.icd-code.de/" target="_blank" rel="noopener noreferrer">https://www.icd-code.de/</a></p>
+                <ul>
+                    <li><strong>Use for:</strong> Classified diagnoses in the German context (ICD-10-GM)</li>
+                </ul>
+                
+                <h3>4. Optional: OMOP Athena – What Is It For?</h3>
+                <p>🔗 <a href="https://athena.ohdsi.org" target="_blank" rel="noopener noreferrer">https://athena.ohdsi.org</a></p>
+                <p>OMOP Athena is <strong>not its own vocabulary</strong>, but rather an integrated collection of many international standard vocabularies, including:</p>
+                <ul>
+                    <li>SNOMED CT</li>
+                    <li>LOINC</li>
+                    <li>ICD-10, ICD-9</li>
+                    <li>HCPCS, CPT, ATC, RxNorm, UCUM, and many more</li>
+                </ul>
+                
+                <h3>Why Athena Is Helpful:</h3>
+                <ul>
+                    <li>You can search additional vocabularies</li>
+                    <li>It's well-suited for cross-checking your findings</li>
+                </ul>
+                
+                <p><strong>⚠️ Important:</strong> Primary searches should <em>always</em> be performed in the original vocabularies, because their search functions are often better and hierarchies are fully navigable.</p>
+            </div>
+        </section>
+
+        <!-- Approximate Matches -->
+        <section class="manual-section">
+            <h2>⚖️ Approximate Matches</h2>
+            <div class="manual-text">
+                <p>Use the <strong>"Approximate match"</strong> checkbox when:</p>
+                <ul>
+                    <li>The found code doesn't match exactly what the term says</li>
+                    <li>The code is close in meaning but not a perfect match</li>
+                    <li>It's the best available option even though it's not ideal</li>
+                </ul>
+                <p><strong>Tip:</strong> Use the comment field to explain why you marked it as an approximate match.</p>
             </div>
         </section>
 
@@ -62,25 +117,24 @@
         <section class="manual-section">
             <h2>💡 When No Code Exists - Proposing New Concepts</h2>
             <div class="manual-text">
-                <p><strong>Important:</strong> Only use the "No Code Found - Propose New Concept" option when you have thoroughly searched and cannot find an existing code in any vocabulary.</p>
+                <p><strong>⚠️ Important:</strong> Only use the "No Code Found - Propose New Concept" button when you have thoroughly searched and cannot find an existing code in any vocabulary.</p>
                 
-                <h3>What this means:</h3>
+                <h3>Before using "No Code Found":</h3>
                 <ul>
-                    <li>You've searched all relevant vocabularies (SNOMED CT, ICD-10, LOINC, etc.)</li>
-                    <li>No existing code adequately represents the term</li>
-                    <li>You're proposing that a <strong>new concept</strong> should be created</li>
+                    <li>✅ Search all relevant vocabularies (SNOMED CT, ICD-10, LOINC, etc.)</li>
+                    <li>✅ Try different search terms and synonyms</li>
+                    <li>✅ Consider checking OMOP Athena for additional vocabularies</li>
+                    <li>✅ Look for broader or narrower concepts that might fit</li>
                 </ul>
                 
                 <h3>How to propose a new concept:</h3>
                 <ol>
-                    <li>Click the "No Code Found - Propose New Concept" button</li>
+                    <li>Click the <strong>"No Code Found - Propose New Concept"</strong> button</li>
                     <li>Enter <strong>only a display text</strong> (description) for the proposed concept</li>
-                    <li>Leave the code field empty - this indicates it's a new proposal</li>
+                    <li>The code field remains empty - this indicates it's a new proposal</li>
                 </ol>
                 
                 <p><strong>Note:</strong> Proposed new concepts will be marked as vocabulary "NEW_CONCEPT" and will be reviewed separately.</p>
-                
-                <p><strong>[Additional content to be added]</strong></p>
             </div>
         </section>
 
@@ -88,8 +142,13 @@
         <section class="manual-section">
             <h2>📝 Adding Multiple Concepts</h2>
             <div class="manual-text">
-                <p><strong>[Content to be added]</strong></p>
-                <p>When and how to add multiple codes/concepts for a single term.</p>
+                <p>You can add multiple codes for a single term when:</p>
+                <ul>
+                    <li>The clinical term encompasses multiple distinct concepts</li>
+                    <li>Different aspects of the term need separate codes</li>
+                    <li>Multiple codes from different vocabularies are relevant</li>
+                </ul>
+                <p>Click the <strong>"+ Add Another Concept"</strong> button to add additional code entries.</p>
             </div>
         </section>
 
@@ -97,11 +156,28 @@
         <section class="manual-section">
             <h2>✅ Best Practices</h2>
             <div class="manual-text">
-                <p><strong>[Content to be added]</strong></p>
+                <h3>Search Strategy:</h3>
                 <ul>
-                    <li>Tips for efficient mapping</li>
-                    <li>Common pitfalls to avoid</li>
-                    <li>Quality assurance guidelines</li>
+                    <li>Always start with the original vocabulary sources</li>
+                    <li>Use multiple search terms and synonyms</li>
+                    <li>Navigate through hierarchies to find related concepts</li>
+                    <li>Double-check your findings in OMOP Athena</li>
+                </ul>
+                
+                <h3>Quality Guidelines:</h3>
+                <ul>
+                    <li>Prefer exact matches over approximate matches</li>
+                    <li>Always include the complete display text from the vocabulary</li>
+                    <li>Use comments to document your decision-making process</li>
+                    <li>Only mark "No Code Found" after thorough searching</li>
+                </ul>
+                
+                <h3>Common Pitfalls to Avoid:</h3>
+                <ul>
+                    <li>❌ Don't skip the display text field - it's required for proper documentation</li>
+                    <li>❌ Don't use "No Code Found" without exhaustive searching</li>
+                    <li>❌ Don't forget to select the correct vocabulary</li>
+                    <li>❌ Don't leave approximate matches unexplained</li>
                 </ul>
             </div>
         </section>
