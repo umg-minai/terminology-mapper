@@ -198,11 +198,18 @@ header h1 {
     margin-bottom: 20px;
 }
 
-.form-group label {
+.form-group label,
+.input-label {
     display: block;
     margin-bottom: 8px;
     font-weight: 600;
     color: var(--text-primary);
+}
+
+.input-label .help-text {
+    font-weight: normal;
+    color: var(--text-secondary);
+    font-size: 0.9em;
 }
 
 .form-group input[type="text"],

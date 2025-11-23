@@ -28,14 +28,22 @@
                 <!-- Initial code entry -->
                 <div class="code-entry" data-index="0">
                     <div class="code-entry-header">
-                        <label>Code #1</label>
+                        <label>Concept #1</label>
                     </div>
                     <div class="code-entry-body">
                         <div class="form-row">
                             <div class="form-group flex-grow">
+                                <label class="input-label">Code <span class="help-text">(unique identifier)</span></label>
                                 <input type="text" class="code-input" data-code-index="0"
-                                       placeholder="Enter code (e.g., 123456789, I10, LP12345-6)"
+                                       placeholder="e.g., 123456789, I10, LP12345-6"
                                        autofocus>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group flex-grow">
+                                <label class="input-label">Display Text <span class="help-text">(human-readable description)</span></label>
+                                <input type="text" class="display-text-input" data-display-index="0"
+                                       placeholder="e.g., Essential (primary) hypertension">
                             </div>
                         </div>
                         <div class="form-row">
@@ -71,7 +79,7 @@
                                 <input type="checkbox" class="approximate-match-checkbox" data-approx-index="0">
                                 <span>Approximate match</span>
                             </label>
-                            <span class="help-text" style="margin-left: 10px;">Check if the code doesn't exactly match what the item says</span>
+                            <span class="help-text" style="margin-left: 10px;">Check if the code doesn't exactly match the term</span>
                         </div>
                     </div>
                 </div>
@@ -79,7 +87,7 @@
 
             <!-- Add Another Code Button -->
             <button type="button" class="btn btn-secondary btn-add-code" id="addCodeBtn">
-                + Add Another Code
+                + Add Another Concept
             </button>
 
             <!-- Comment Field -->
@@ -90,17 +98,23 @@
                           style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-family: inherit; font-size: 14px;"></textarea>
             </div>
 
-            <!-- Hidden input to store codes JSON -->
+            <!-- Hidden inputs to store JSON data -->
             <input type="hidden" name="codes_json" id="codesJson">
+            <input type="hidden" name="display_texts_json" id="displayTextsJson">
             <input type="hidden" name="no_code_found" id="noCodeFound" value="false">
+            <input type="hidden" name="propose_new" id="proposeNew" value="false">
 
             <div class="button-group">
                 <button type="submit" class="btn btn-primary btn-large" id="submitBtn">
                     Submit & Continue
                 </button>
                 <button type="button" class="btn btn-warning btn-large" id="noCodeBtn">
-                    No Code Found
+                    No Code Found - Propose New Concept
                 </button>
+            </div>
+            
+            <div class="help-banner" style="margin-top: 15px; padding: 12px; background: #f1f5f9; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                <p style="margin: 0; font-size: 14px;"><strong>Need help?</strong> Check out the <a href="/manual" target="_blank" style="color: #3b82f6; text-decoration: underline;">mapping manual</a> for detailed instructions.</p>
             </div>
         </form>
 
@@ -205,14 +219,22 @@ document.getElementById('addCodeBtn').addEventListener('click', function() {
     newEntry.dataset.index = newIndex;
     newEntry.innerHTML = `
         <div class="code-entry-header">
-            <label>Code #${newIndex + 1}</label>
+            <label>Concept #${newIndex + 1}</label>
             <button type="button" class="btn-remove-code" data-remove-index="${newIndex}">Remove</button>
         </div>
         <div class="code-entry-body">
             <div class="form-row">
                 <div class="form-group flex-grow">
+                    <label class="input-label">Code <span class="help-text">(unique identifier)</span></label>
                     <input type="text" class="code-input" data-code-index="${newIndex}"
-                           placeholder="Enter code">
+                           placeholder="e.g., 123456789, I10, LP12345-6">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group flex-grow">
+                    <label class="input-label">Display Text <span class="help-text">(human-readable description)</span></label>
+                    <input type="text" class="display-text-input" data-display-index="${newIndex}"
+                           placeholder="e.g., Essential (primary) hypertension">
                 </div>
             </div>
             <div class="form-row">
@@ -248,7 +270,7 @@ document.getElementById('addCodeBtn').addEventListener('click', function() {
                     <input type="checkbox" class="approximate-match-checkbox" data-approx-index="${newIndex}">
                     <span>Approximate match</span>
                 </label>
-                <span class="help-text" style="margin-left: 10px;">Check if the code doesn't exactly match what the item says</span>
+                <span class="help-text" style="margin-left: 10px;">Check if the code doesn't exactly match the term</span>
             </div>
         </div>
     `;
@@ -268,30 +290,52 @@ document.getElementById('addCodeBtn').addEventListener('click', function() {
     newEntry.querySelector('.code-input').focus();
 });
 
-// Handle "No Code Found" button
+// Handle "No Code Found" button - propose new concept
 document.getElementById('noCodeBtn').addEventListener('click', function() {
-    document.getElementById('noCodeFound').value = 'true';
-    document.getElementById('codesJson').value = '[]';
-    document.getElementById('mappingForm').submit();
+    const displayText = prompt('No existing code found. Please propose a new concept by entering a display text (description):');
+    
+    if (displayText && displayText.trim()) {
+        // User is proposing a new concept - only display text, no code
+        const newConcept = [{
+            code: '',
+            display_text: displayText.trim(),
+            vocabulary: 'NEW_CONCEPT',
+            approximate_match: false
+        }];
+        
+        document.getElementById('codesJson').value = JSON.stringify(newConcept);
+        document.getElementById('displayTextsJson').value = JSON.stringify([displayText.trim()]);
+        document.getElementById('noCodeFound').value = 'true';
+        document.getElementById('proposeNew').value = 'true';
+        document.getElementById('mappingForm').submit();
+    } else if (displayText !== null) {
+        // User clicked OK but didn't enter text
+        alert('Please enter a description for the new concept, or click Cancel if you changed your mind.');
+    }
+    // If null (clicked Cancel), do nothing
 });
 
 // Handle form submission
 document.getElementById('mappingForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
-    // Collect all codes
+    // Collect all codes and display texts
     const codes = [];
+    const displayTexts = [];
     const codeEntries = document.querySelectorAll('.code-entry');
     let validationError = false;
 
     codeEntries.forEach(entry => {
         const index = entry.dataset.index;
         const codeInput = entry.querySelector(`input.code-input[data-code-index="${index}"]`);
+        const displayTextInput = entry.querySelector(`input.display-text-input[data-display-index="${index}"]`);
         const vocabRadio = entry.querySelector(`input[name="vocab_${index}"]:checked`);
         const approxCheckbox = entry.querySelector(`input.approximate-match-checkbox[data-approx-index="${index}"]`);
 
         const code = codeInput.value.trim();
-        if (code) {
+        const displayText = displayTextInput.value.trim();
+        
+        if (code || displayText) {
             let vocabulary = vocabRadio ? vocabRadio.value : 'SNOMED';
             
             // If "Other" is selected, get the custom vocabulary name
@@ -314,6 +358,8 @@ document.getElementById('mappingForm').addEventListener('submit', function(e) {
                 vocabulary: vocabulary,
                 approximate_match: approxCheckbox ? approxCheckbox.checked : false
             });
+            
+            displayTexts.push(displayText);
         }
     });
 
@@ -323,7 +369,9 @@ document.getElementById('mappingForm').addEventListener('submit', function(e) {
 
     // Set the JSON data
     document.getElementById('codesJson').value = JSON.stringify(codes);
+    document.getElementById('displayTextsJson').value = JSON.stringify(displayTexts);
     document.getElementById('noCodeFound').value = 'false';
+    document.getElementById('proposeNew').value = 'false';
 
     // Submit the form
     this.submit();

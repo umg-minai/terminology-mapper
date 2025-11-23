@@ -216,19 +216,29 @@ def init_db():
         UNIQUE(category, term)
     )''')
 
-    # Mappings table - updated to support multiple codes
+    # Mappings table - updated to support multiple codes with separate display texts
     c.execute('''CREATE TABLE IF NOT EXISTS mappings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         term_id INTEGER NOT NULL,
         user_id INTEGER NOT NULL,
         codes TEXT NOT NULL,
+        display_texts TEXT,
         no_code_found BOOLEAN DEFAULT 0,
+        propose_new BOOLEAN DEFAULT 0,
         comment TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (term_id) REFERENCES terms(id),
         FOREIGN KEY (user_id) REFERENCES users(id),
         UNIQUE(term_id, user_id)
     )''')
+    
+    # Migrate existing data: add display_texts and propose_new columns if they don't exist
+    try:
+        c.execute('SELECT display_texts FROM mappings LIMIT 1')
+    except sqlite3.OperationalError:
+        c.execute('ALTER TABLE mappings ADD COLUMN display_texts TEXT')
+        c.execute('ALTER TABLE mappings ADD COLUMN propose_new BOOLEAN DEFAULT 0')
+        conn.commit()
 
     # Sessions table
     c.execute('''CREATE TABLE IF NOT EXISTS sessions (
@@ -666,7 +676,9 @@ async def mapping_session(request: Request):
 async def submit_mapping(
     request: Request,
     codes_json: str = Form("[]"),
+    display_texts_json: str = Form("[]"),
     no_code_found: bool = Form(False),
+    propose_new: bool = Form(False),
     comment: str = Form("")
 ):
     """Submit a mapping for current term"""
@@ -686,8 +698,8 @@ async def submit_mapping(
     conn = get_db()
     c = conn.cursor()
     try:
-        c.execute('INSERT INTO mappings (term_id, user_id, codes, no_code_found, comment) VALUES (?, ?, ?, ?, ?)',
-                  (term_id, user['user_id'], codes_json, no_code_found, comment.strip() if comment else None))
+        c.execute('INSERT INTO mappings (term_id, user_id, codes, display_texts, no_code_found, propose_new, comment) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                  (term_id, user['user_id'], codes_json, display_texts_json, no_code_found, propose_new, comment.strip() if comment else None))
         conn.commit()
     except sqlite3.IntegrityError:
         # User already rated this term - skip it
@@ -806,7 +818,7 @@ async def export_mappings(request: Request):
     c = conn.cursor()
 
     c.execute('''
-        SELECT u.username, t.category, t.term, m.codes, m.no_code_found, m.comment, m.created_at
+        SELECT u.username, t.category, t.term, m.codes, m.display_texts, m.no_code_found, m.propose_new, m.comment, m.created_at
         FROM mappings m
         JOIN users u ON m.user_id = u.id
         JOIN terms t ON m.term_id = t.id
@@ -819,7 +831,7 @@ async def export_mappings(request: Request):
     # Create CSV in memory
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['Username', 'Category', 'Term', 'Codes', 'No Code Found', 'Comment', 'Created At'])
+    writer.writerow(['Username', 'Category', 'Term', 'Codes', 'Display Texts', 'No Code Found', 'Propose New', 'Comment', 'Created At'])
 
     for row in rows:
         writer.writerow(row)
@@ -1093,6 +1105,16 @@ async def submit_contact(request: Request,
 
     # Redirect to contact page with success message
     return RedirectResponse(url="/contact?success=true", status_code=302)
+
+# Manual/Help Page Route
+@app.get("/manual", response_class=HTMLResponse)
+async def manual(request: Request):
+    """Display manual/help page"""
+    user = get_current_user(request)
+    return templates.TemplateResponse("manual.html", {
+        "request": request,
+        "user": user
+    })
 
 if __name__ == '__main__':
     import uvicorn

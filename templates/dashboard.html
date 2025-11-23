@@ -58,6 +58,9 @@
         <p>Check back later when new terms are added or wait for other users to contribute more mappings.</p>
         {% else %}
         <p>Map medical terms to standardized codes. We'll prioritize terms that need more mappings.</p>
+        <p style="margin-top: 10px;">
+            <a href="/manual" style="color: #3b82f6; text-decoration: underline;">📖 Need help? Check the mapping manual</a>
+        </p>
         <form method="POST" action="{{ url_for('start_session') }}">
             <div class="form-group">
                 <label for="count">Number of terms per session:</label>
