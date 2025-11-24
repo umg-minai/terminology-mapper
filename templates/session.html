@@ -105,14 +105,8 @@
             <input type="hidden" name="propose_new" id="proposeNew" value="false">
 
             <div class="button-group">
-                <button type="button" class="btn btn-secondary" id="prevBtn" {% if current == 1 %}disabled{% endif %}>
-                    ← Previous
-                </button>
                 <button type="submit" class="btn btn-primary btn-large" id="submitBtn">
                     Submit & Continue
-                </button>
-                <button type="button" class="btn btn-secondary" id="nextBtn" {% if current == total %}disabled{% endif %}>
-                    Next →
                 </button>
                 <button type="button" class="btn btn-warning btn-large" id="noCodeBtn">
                     No Code Found - Propose New Concept
@@ -406,17 +400,186 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Navigation handlers
-document.getElementById('prevBtn')?.addEventListener('click', function() {
-    if (!this.disabled) {
-        window.location.href = '/session/navigate?direction=prev';
-    }
-});
+// Store form data in sessionStorage before navigation
+function saveFormData() {
+    const termId = '{{ term.id }}';
+    const formData = {
+        codes: [],
+        comment: document.getElementById('comment').value
+    };
+    
+    document.querySelectorAll('.code-entry').forEach(entry => {
+        const index = entry.dataset.index;
+        const codeInput = entry.querySelector(`input.code-input[data-code-index="${index}"]`);
+        const displayTextInput = entry.querySelector(`input.display-text-input[data-display-index="${index}"]`);
+        const vocabRadio = entry.querySelector(`input[name="vocab_${index}"]:checked`);
+        const approxCheckbox = entry.querySelector(`input.approximate-match-checkbox[data-approx-index="${index}"]`);
+        
+        let vocabulary = vocabRadio ? vocabRadio.value : 'SNOMED';
+        if (vocabulary === 'OTHER') {
+            const otherInput = entry.querySelector(`.vocab-other-text[data-vocab-index="${index}"]`);
+            vocabulary = otherInput ? otherInput.value.trim() : '';
+        }
+        
+        formData.codes.push({
+            code: codeInput.value,
+            displayText: displayTextInput.value,
+            vocabulary: vocabulary,
+            approximateMatch: approxCheckbox ? approxCheckbox.checked : false
+        });
+    });
+    
+    sessionStorage.setItem(`term_draft_${termId}`, JSON.stringify(formData));
+}
 
-document.getElementById('nextBtn')?.addEventListener('click', function() {
-    if (!this.disabled) {
-        window.location.href = '/session/navigate?direction=next';
+// Restore form data from sessionStorage
+function restoreFormData() {
+    const termId = '{{ term.id }}';
+    const savedData = sessionStorage.getItem(`term_draft_${termId}`);
+    
+    if (savedData) {
+        const formData = JSON.parse(savedData);
+        
+        // Restore comment
+        if (formData.comment) {
+            document.getElementById('comment').value = formData.comment;
+        }
+        
+        // Restore code entries
+        if (formData.codes && formData.codes.length > 0) {
+            // Clear default entry
+            const container = document.getElementById('codesContainer');
+            container.innerHTML = '';
+            
+            formData.codes.forEach((codeData, index) => {
+                if (index > 0) {
+                    // Add additional entries
+                    document.getElementById('addCodeBtn').click();
+                }
+                
+                // Wait for DOM to update
+                setTimeout(() => {
+                    const entry = container.querySelector(`[data-index="${index}"]`);
+                    if (!entry) {
+                        // Create the entry manually
+                        createCodeEntry(index);
+                    }
+                    
+                    const codeInput = container.querySelector(`input.code-input[data-code-index="${index}"]`);
+                    const displayTextInput = container.querySelector(`input.display-text-input[data-display-index="${index}"]`);
+                    const approxCheckbox = container.querySelector(`input.approximate-match-checkbox[data-approx-index="${index}"]`);
+                    
+                    if (codeInput) codeInput.value = codeData.code || '';
+                    if (displayTextInput) displayTextInput.value = codeData.displayText || '';
+                    if (approxCheckbox) approxCheckbox.checked = codeData.approximateMatch || false;
+                    
+                    // Set vocabulary
+                    const vocabRadios = container.querySelectorAll(`input[name="vocab_${index}"]`);
+                    let vocabSet = false;
+                    vocabRadios.forEach(radio => {
+                        if (radio.value === codeData.vocabulary) {
+                            radio.checked = true;
+                            vocabSet = true;
+                        }
+                    });
+                    
+                    // If custom vocabulary, set Other and the text field
+                    if (!vocabSet && codeData.vocabulary) {
+                        const otherRadio = container.querySelector(`input.vocab-other-radio[data-vocab-index="${index}"]`);
+                        if (otherRadio) {
+                            otherRadio.checked = true;
+                            const otherInput = container.querySelector(`.vocab-other-input[data-vocab-index="${index}"]`);
+                            if (otherInput) {
+                                otherInput.style.display = 'block';
+                                const textInput = otherInput.querySelector('.vocab-other-text');
+                                if (textInput) textInput.value = codeData.vocabulary;
+                            }
+                        }
+                    }
+                }, 100 * index);
+            });
+        }
     }
-});
+}
+
+function createCodeEntry(index) {
+    const container = document.getElementById('codesContainer');
+    const newEntry = document.createElement('div');
+    newEntry.className = 'code-entry';
+    newEntry.dataset.index = index;
+    newEntry.innerHTML = `
+        <div class="code-entry-header">
+            <label>Concept #${index + 1}</label>
+            ${index > 0 ? `<button type="button" class="btn-remove-code" data-remove-index="${index}">Remove</button>` : ''}
+        </div>
+        <div class="code-entry-body">
+            <div class="form-row">
+                <div class="form-group flex-grow">
+                    <label class="input-label">Code <span class="help-text">(unique identifier)</span></label>
+                    <input type="text" class="code-input" data-code-index="${index}"
+                           placeholder="e.g., 123456789, I10, LP12345-6"${index === 0 ? ' autofocus' : ''}>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group flex-grow">
+                    <label class="input-label">Display Text <span class="help-text">(human-readable description)</span></label>
+                    <input type="text" class="display-text-input" data-display-index="${index}"
+                           placeholder="e.g., Essential (primary) hypertension">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="vocab-selector">
+                    <label class="vocab-label">Vocabulary:</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="vocab_${index}" value="SNOMED" checked>
+                            <span>SNOMED CT</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="vocab_${index}" value="ICD10">
+                            <span>ICD-10</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="vocab_${index}" value="LOINC">
+                            <span>LOINC</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="vocab_${index}" value="OTHER" class="vocab-other-radio" data-vocab-index="${index}">
+                            <span>Other</span>
+                        </label>
+                    </div>
+                    <div class="vocab-other-input" data-vocab-index="${index}" style="display: none; margin-top: 10px;">
+                        <input type="text" class="vocab-other-text" data-vocab-index="${index}"
+                               placeholder="Enter vocabulary name (required)" 
+                               style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <label class="checkbox-option">
+                    <input type="checkbox" class="approximate-match-checkbox" data-approx-index="${index}">
+                    <span>Approximate match</span>
+                </label>
+                <span class="help-text" style="margin-left: 10px;">Check if the code doesn't exactly match the term</span>
+            </div>
+        </div>
+    `;
+    container.appendChild(newEntry);
+    setupCodeInput(index);
+    setupVocabOtherToggle(index);
+    
+    if (index > 0) {
+        newEntry.querySelector('.btn-remove-code')?.addEventListener('click', function() {
+            newEntry.remove();
+        });
+    }
+}
+
+// Save form data periodically and before navigation
+setInterval(saveFormData, 2000);
+window.addEventListener('beforeunload', saveFormData);
+
+// Restore form data on page load
+restoreFormData();
 </script>
 {% endblock %}

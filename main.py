@@ -645,7 +645,7 @@ async def start_session(request: Request, count: int = Form(15)):
     return RedirectResponse(url="/session", status_code=302)
 
 @app.get("/session", response_class=HTMLResponse)
-async def mapping_session(request: Request):
+async def mapping_session(request: Request, index: int = None):
     """Active mapping session"""
     user = get_current_user(request)
     if not user:
@@ -656,6 +656,14 @@ async def mapping_session(request: Request):
 
     if not session_terms or current_index is None:
         return RedirectResponse(url="/dashboard", status_code=302)
+
+    # Allow navigation to specific index via query parameter
+    if index is not None:
+        if 0 <= index < len(session_terms):
+            current_index = index
+            request.session['current_index'] = current_index
+        else:
+            return RedirectResponse(url="/dashboard", status_code=302)
 
     if current_index >= len(session_terms):
         return RedirectResponse(url="/session/complete", status_code=302)
@@ -671,26 +679,6 @@ async def mapping_session(request: Request):
         "progress": progress_percent,
         "required_raters": REQUIRED_RATERS
     })
-
-@app.get("/session/navigate")
-async def navigate_session(request: Request, direction: str):
-    """Navigate between terms in the session"""
-    user = get_current_user(request)
-    if not user:
-        return RedirectResponse(url="/login", status_code=302)
-
-    session_terms = request.session.get('session_terms')
-    current_index = request.session.get('current_index')
-
-    if not session_terms or current_index is None:
-        return RedirectResponse(url="/dashboard", status_code=302)
-
-    if direction == 'prev' and current_index > 0:
-        request.session['current_index'] = current_index - 1
-    elif direction == 'next' and current_index < len(session_terms) - 1:
-        request.session['current_index'] = current_index + 1
-
-    return RedirectResponse(url="/session", status_code=302)
 
 @app.post("/session/submit")
 async def submit_mapping(
@@ -728,9 +716,11 @@ async def submit_mapping(
         conn.close()
 
     # Move to next term
-    request.session['current_index'] = current_index + 1
+    next_index = current_index + 1
+    request.session['current_index'] = next_index
 
-    return RedirectResponse(url="/session", status_code=302)
+    # Redirect to specific index to enable browser back/forward navigation
+    return RedirectResponse(url=f"/session?index={next_index}", status_code=302)
 
 @app.get("/session/complete", response_class=HTMLResponse)
 async def complete_session(request: Request):
