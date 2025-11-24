@@ -672,6 +672,26 @@ async def mapping_session(request: Request):
         "required_raters": REQUIRED_RATERS
     })
 
+@app.get("/session/navigate")
+async def navigate_session(request: Request, direction: str):
+    """Navigate between terms in the session"""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    session_terms = request.session.get('session_terms')
+    current_index = request.session.get('current_index')
+
+    if not session_terms or current_index is None:
+        return RedirectResponse(url="/dashboard", status_code=302)
+
+    if direction == 'prev' and current_index > 0:
+        request.session['current_index'] = current_index - 1
+    elif direction == 'next' and current_index < len(session_terms) - 1:
+        request.session['current_index'] = current_index + 1
+
+    return RedirectResponse(url="/session", status_code=302)
+
 @app.post("/session/submit")
 async def submit_mapping(
     request: Request,

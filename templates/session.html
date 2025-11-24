@@ -105,8 +105,14 @@
             <input type="hidden" name="propose_new" id="proposeNew" value="false">
 
             <div class="button-group">
+                <button type="button" class="btn btn-secondary" id="prevBtn" {% if current == 1 %}disabled{% endif %}>
+                    ← Previous
+                </button>
                 <button type="submit" class="btn btn-primary btn-large" id="submitBtn">
                     Submit & Continue
+                </button>
+                <button type="button" class="btn btn-secondary" id="nextBtn" {% if current == total %}disabled{% endif %}>
+                    Next →
                 </button>
                 <button type="button" class="btn btn-warning btn-large" id="noCodeBtn">
                     No Code Found - Propose New Concept
@@ -377,10 +383,19 @@ document.getElementById('mappingForm').addEventListener('submit', function(e) {
     this.submit();
 });
 
+// Prevent Enter key from submitting the form
+document.getElementById('mappingForm').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.ctrlKey) {
+        e.preventDefault();
+        return false;
+    }
+});
+
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
     // Ctrl+Enter to submit
     if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
         document.getElementById('submitBtn').click();
     }
 
@@ -388,6 +403,19 @@ document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && e.key === 'n') {
         e.preventDefault();
         document.getElementById('noCodeBtn').click();
+    }
+});
+
+// Navigation handlers
+document.getElementById('prevBtn')?.addEventListener('click', function() {
+    if (!this.disabled) {
+        window.location.href = '/session/navigate?direction=prev';
+    }
+});
+
+document.getElementById('nextBtn')?.addEventListener('click', function() {
+    if (!this.disabled) {
+        window.location.href = '/session/navigate?direction=next';
     }
 });
 </script>
