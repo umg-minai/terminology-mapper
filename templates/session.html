@@ -31,16 +31,14 @@
                         <label>Concept #1</label>
                     </div>
                     <div class="code-entry-body">
-                        <div class="form-row">
-                            <div class="form-group flex-grow">
+                        <div class="form-row" style="display: flex; gap: 15px;">
+                            <div class="form-group" style="flex: 1;">
                                 <label class="input-label">Code <span class="help-text">(unique identifier)</span></label>
                                 <input type="text" class="code-input" data-code-index="0"
                                        placeholder="e.g., 123456789, I10, LP12345-6"
                                        autofocus>
                             </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group flex-grow">
+                            <div class="form-group" style="flex: 1;">
                                 <label class="input-label">Display Text <span class="help-text">(human-readable description)</span></label>
                                 <input type="text" class="display-text-input" data-display-index="0"
                                        placeholder="e.g., Essential (primary) hypertension">
@@ -223,15 +221,13 @@ document.getElementById('addCodeBtn').addEventListener('click', function() {
             <button type="button" class="btn-remove-code" data-remove-index="${newIndex}">Remove</button>
         </div>
         <div class="code-entry-body">
-            <div class="form-row">
-                <div class="form-group flex-grow">
+            <div class="form-row" style="display: flex; gap: 15px;">
+                <div class="form-group" style="flex: 1;">
                     <label class="input-label">Code <span class="help-text">(unique identifier)</span></label>
                     <input type="text" class="code-input" data-code-index="${newIndex}"
                            placeholder="e.g., 123456789, I10, LP12345-6">
                 </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group flex-grow">
+                <div class="form-group" style="flex: 1;">
                     <label class="input-label">Display Text <span class="help-text">(human-readable description)</span></label>
                     <input type="text" class="display-text-input" data-display-index="${newIndex}"
                            placeholder="e.g., Essential (primary) hypertension">
@@ -513,15 +509,13 @@ function createCodeEntry(index) {
             ${index > 0 ? `<button type="button" class="btn-remove-code" data-remove-index="${index}">Remove</button>` : ''}
         </div>
         <div class="code-entry-body">
-            <div class="form-row">
-                <div class="form-group flex-grow">
+            <div class="form-row" style="display: flex; gap: 15px;">
+                <div class="form-group" style="flex: 1;">
                     <label class="input-label">Code <span class="help-text">(unique identifier)</span></label>
                     <input type="text" class="code-input" data-code-index="${index}"
                            placeholder="e.g., 123456789, I10, LP12345-6"${index === 0 ? ' autofocus' : ''}>
                 </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group flex-grow">
+                <div class="form-group" style="flex: 1;">
                     <label class="input-label">Display Text <span class="help-text">(human-readable description)</span></label>
                     <input type="text" class="display-text-input" data-display-index="${index}"
                            placeholder="e.g., Essential (primary) hypertension">
